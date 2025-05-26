@@ -69,12 +69,15 @@ public:
     void setActionId(int actionId);
     int getUniqueId() const;
     void setUniqueId(int uniqueId);
-    const QPoint& getDestPosition() const; 
+    QPoint getDestPosition() const;  // Changed to return by value
     void setDestPosition(const QPoint& pos);
     QString getText() const;
     void setText(const QString& text);
-    QString getDescription() const;
-    void setDescription(const QString& description);
+    QString getDescription() const; // This is for editor-visible "description" attribute
+    void setDescription(const QString& description); // Sets "description" attribute
+
+    // Weight
+    double getWeight() const;
 
     // Properties from DatItem/ItemProperties
     bool hasProperty(ItemProperty prop) const; // Keep for now, might be needed
@@ -129,6 +132,7 @@ signals:
     void blockingChanged(bool blocking);
     void walkableChanged(bool walkable);
     void collidableChanged(bool collidable); // Added signal
+    void attributesChanged(); // Generic signal for attribute changes
 
 protected:
     int id;

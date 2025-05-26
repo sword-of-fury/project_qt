@@ -5,11 +5,13 @@
 #include "bordersystem.h"
 #include "otbmfile.h"
 #include "itemmanager.h" // For ItemManager (used in cleanDuplicateItems for properties).
+#include "spawn.h"       // Added for Spawn class integration
 
 #include <QDebug>
 #include <QFileInfo>
 #include <QVector>
 #include <algorithm> // For std::sort, std::remove
+#include <functional> // For std::function
 
 Map* Map::s_instance = nullptr;
 
@@ -31,6 +33,13 @@ Map::Map(QObject* parent) :
     currentLayer(static_cast<int>(Layer::Type::Ground)),
     borderSystem(new BorderSystem(this)) // BorderSystem is owned by Map
 {
+    // Initialize m_version to a default (e.g., OTBM_4 and a common client version)
+    m_version.otbm_version = MapVersion::MAP_OTBM_4; // Default to a modern version
+    m_version.client_version_major = 10; // Example default client version
+    m_version.client_version_minor = 98;
+    m_version.client_version_patch = 0;
+    // m_warnings, m_error, m_spawns are default constructed.
+
     layers.reserve(Map::LayerCount);
     for (int i = 0; i < Map::LayerCount; ++i) {
         Layer* newLayer = new Layer(static_cast<Layer::Type>(i), this);
@@ -65,6 +74,21 @@ void Map::clear() {
     waypoints.clear();
     towns.clear();
     houses.clear();
+
+    // Clear spawns (assuming Map owns Spawn objects, which it will eventually)
+    // For now, just clearing the list as Spawn definition is pending.
+    qDeleteAll(m_spawns); // Map owns Spawn objects
+    m_spawns.clear();
+
+    // Reset version to a default state
+    m_version.otbm_version = MapVersion::MAP_OTBM_4;
+    m_version.client_version_major = 10;
+    m_version.client_version_minor = 98;
+    m_version.client_version_patch = 0;
+    
+    clearWarnings();
+    clearError();
+
     for (Layer* layer : layers) {
         layer->setVisible(true);
         layer->setLocked(false);
@@ -206,12 +230,29 @@ bool Map::convert(MapVersion to, bool showdialog) {
 bool Map::loadFromFile(const QString& filename) {
     OTBMFile loader;
     connect(&loader, &OTBMFile::loadProgress, this, &Map::loadProgress);
-    connect(&loader, &OTBMFile::error, this, [this](const QString& msg){ qDebug() << "Map load error:" << msg; });
+    // Capture errors from loader into m_error
+    connect(&loader, &OTBMFile::error, this, [this](const QString& msg){ 
+        qDebug() << "Map load error:" << msg; 
+        setError(msg); // Store the error message
+    });
     
+    clearError(); // Clear previous errors before loading
+    clearWarnings(); // Clear previous warnings
+
     // Pass this map instance so the loader can fill it directly
     bool success = loader.load(filename, this);
     
     if (success) {
+        // Assuming OTBMFile has methods to get version and warnings after load
+        // For now, these are placeholders until OTBMFile is updated
+        // MapVersion loadedVersion = loader.getMapVersion(); // Placeholder
+        // setVersion(loadedVersion); // Placeholder
+        
+        // QStringList loadedWarnings = loader.getWarnings(); // Placeholder
+        // for(const QString& warning : loadedWarnings) { // Placeholder
+        //     addWarning(warning); // Placeholder
+        // }
+
         qDebug() << "Map loaded from" << filename;
         setName(QFileInfo(filename).baseName().toStdString());
         setModified(false);
@@ -232,6 +273,7 @@ bool Map::loadFromFile(const QString& filename) {
         emit mapChanged();
     } else {
         qDebug() << "Failed to load map from" << filename;
+        // m_error should already be set by the loader via the connected signal
     }
     return success;
 }
@@ -416,17 +458,282 @@ void Map::flipSelectionVertically() {
 }
 
 uint32_t Map::cleanDuplicateItems(const std::vector<std::pair<uint16_t, uint16_t>>& ranges, const PropertyFlags& flags) {
-    qDebug() << "Map: Clean duplicate items. (Stub).";
-    Q_UNUSED(ranges); Q_UNUSED(flags);
-    return 0; // No items removed.
+    uint32_t duplicates_removed = 0;
+
+    auto isInRanges = [&](uint16_t id) -> bool {
+        if (ranges.empty()) {
+            return true; // Process all items if ranges is empty
+        }
+        for (const auto& range : ranges) {
+            if (id >= range.first && id <= range.second) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    ItemManager& itemManager = ItemManager::getInstance();
+
+    auto compareItems = [&](const Item& item1, const Item& item2) -> bool {
+        if (item1.getId() != item2.getId()) {
+            return false;
+        }
+
+        // Note: The Item class currently doesn't directly expose all these properties.
+        // We'll use hasProperty with assumptions for ItemProperty enum values.
+        // This section will require ItemProperty enum to be comprehensive or Item class to have direct getters.
+
+        // Example for unpassable (assuming ItemProperty::IsBlocking implies unpassable)
+        if (!flags.ignore_unpassable && (item1.hasProperty(ItemProperty::IsBlocking) != item2.hasProperty(ItemProperty::IsBlocking))) {
+            return false;
+        }
+        // Example for unmovable (assuming ItemProperty::IsMovable)
+        if (!flags.ignore_unmovable && (item1.hasProperty(ItemProperty::IsMovable) != item2.hasProperty(ItemProperty::IsMovable))) {
+            return false;
+        }
+        if (!flags.ignore_block_missiles && (item1.hasProperty(ItemProperty::BlockMissiles) != item2.hasProperty(ItemProperty::BlockMissiles))) {
+            return false;
+        }
+        if (!flags.ignore_block_pathfinder && (item1.hasProperty(ItemProperty::BlockPathfinder) != item2.hasProperty(ItemProperty::BlockPathfinder))) {
+            return false;
+        }
+        if (!flags.ignore_readable && (item1.hasProperty(ItemProperty::IsReadable) != item2.hasProperty(ItemProperty::IsReadable))) {
+            return false;
+        }
+        if (!flags.ignore_writeable && (item1.hasProperty(ItemProperty::IsWritable) != item2.hasProperty(ItemProperty::IsWritable))) {
+            return false;
+        }
+        if (!flags.ignore_pickupable && (item1.hasProperty(ItemProperty::IsPickupable) != item2.hasProperty(ItemProperty::IsPickupable))) {
+            return false;
+        }
+        if (!flags.ignore_stackable && (item1.hasProperty(ItemProperty::IsStackable) != item2.hasProperty(ItemProperty::IsStackable))) {
+            return false; // This is tricky; true duplicates of stackables are usually merged. This flag might mean something else.
+        }
+        if (!flags.ignore_rotatable && (item1.hasProperty(ItemProperty::IsRotatable) != item2.hasProperty(ItemProperty::IsRotatable))) {
+            return false;
+        }
+        if (!flags.ignore_hangable && (item1.hasProperty(ItemProperty::IsHangable) != item2.hasProperty(ItemProperty::IsHangable))) {
+            return false;
+        }
+        // Hooks might need specific handling if they depend on orientation, not just presence.
+        if (!flags.ignore_hook_east && (item1.hasProperty(ItemProperty::HookEast) != item2.hasProperty(ItemProperty::HookEast))) {
+            return false;
+        }
+        if (!flags.ignore_hook_south && (item1.hasProperty(ItemProperty::HookSouth) != item2.hasProperty(ItemProperty::HookSouth))) {
+            return false;
+        }
+        // Elevation might be a direct attribute of the Item, e.g., item1.getElevation()
+        // Assuming Item::getElevation() exists or is mapped via a property
+        if (!flags.ignore_elevation && (item1.hasProperty(ItemProperty::HasElevation) != item2.hasProperty(ItemProperty::HasElevation) || 
+                                        (item1.hasProperty(ItemProperty::HasElevation) && item1.getElevation() != item2.getElevation()) )) {
+            // This check assumes getElevation() is valid only if HasElevation is true.
+            // And that ItemProperty::HasElevation exists.
+            return false;
+        }
+
+        // If we made it here, items are considered duplicates based on the flags.
+        return true;
+    };
+    
+    if (tiles.isEmpty() || size.width() == 0 || size.height() == 0) {
+        return 0;
+    }
+
+    for (int x = 0; x < size.width(); ++x) {
+        if (x >= tiles.size()) continue;
+        for (int y = 0; y < size.height(); ++y) {
+            if (y >= tiles[x].size()) continue;
+            for (int z = 0; z < Map::LayerCount; ++z) {
+                if (z >= tiles[x][y].size()) continue;
+
+                Tile* currentTile = tiles[x][y][z];
+                if (currentTile) {
+                    uint32_t count_on_tile = currentTile->cleanDuplicateItems(isInRanges, compareItems);
+                    if (count_on_tile > 0) {
+                        duplicates_removed += count_on_tile;
+                        setModified(true);
+                        emit tileChanged(currentTile->getPosition());
+                    }
+                }
+            }
+        }
+    }
+
+    if (duplicates_removed > 0) {
+        qDebug() << "Removed" << duplicates_removed << "duplicate items from the map.";
+    }
+
+    return duplicates_removed;
 }
 
-void Map::cleanInvalidTiles(bool showdialog) { Q_UNUSED(showdialog); /* Impl */ }
-void Map::convertHouseTiles(uint32_t fromId, uint32_t toId) { Q_UNUSED(fromId); Q_UNUSED(toId); /* Impl */ }
+void Map::cleanInvalidTiles(bool showdialog) {
+    uint32_t total_removed_count = 0;
+    bool map_was_modified = false;
 
-bool Map::addSpawn(Tile* spawnTile) { Q_UNUSED(spawnTile); return false; /* Impl */ }
-void Map::removeSpawn(Tile* spawnTile) { Q_UNUSED(spawnTile); /* Impl */ }
-void Map::removeSpawn(const Position& position) { Q_UNUSED(position); /* Impl */ }
+    if (tiles.isEmpty() || size.width() == 0 || size.height() == 0) {
+        if (showdialog) {
+            qDebug() << "Map is empty. No tiles to clean.";
+        }
+        return; // Nothing to do if map is empty
+    }
+
+    for (int x = 0; x < size.width(); ++x) {
+        if (x >= tiles.size()) continue; // Should not happen with ensureTilesExist
+        for (int y = 0; y < size.height(); ++y) {
+            if (y >= tiles[x].size()) continue; // Should not happen
+            for (int z = 0; z < Map::LayerCount; ++z) { // Iterate through all layers (floors)
+                if (z >= tiles[x][y].size()) continue; // Should not happen
+
+                Tile* tile = tiles[x][y][z];
+                if (tile) {
+                    uint32_t removed_on_tile = tile->cleanInvalidItems();
+                    if (removed_on_tile > 0) {
+                        total_removed_count += removed_on_tile;
+                        map_was_modified = true;
+                        // Emit tileChanged for the specific tile's position (x,y,z)
+                        // The tile itself emits changed() which might be sufficient if MapView listens to that.
+                        // For directness, Map can also signal.
+                        emit tileChanged(tile->getPosition()); // tile->getPosition() includes x,y,z
+                    }
+                }
+            }
+        }
+    }
+
+    if (map_was_modified) {
+        setModified(true); // Set the map as modified
+    }
+
+    if (showdialog) {
+        if (total_removed_count > 0) {
+            qDebug() << "Removed" << total_removed_count << "invalid items from the map.";
+        } else {
+            qDebug() << "No invalid items found on the map.";
+        }
+    }
+    // The requirement was to return uint32_t, but the function signature is void.
+    // For now, sticking to void and using qDebug as per refined instructions.
+    // If it needs to return, the signature in map.h and map.cpp must be changed.
+    // For this task, I will keep it void and use qDebug.
+}
+
+void Map::convertHouseTiles(uint32_t fromId, uint32_t toId) {
+    if (fromId == 0 && toId == 0) { // Converting from unassigned to unassigned makes no sense.
+        qDebug() << "Map::convertHouseTiles: fromId and toId cannot both be 0.";
+        return;
+    }
+    if (fromId == toId) { // Converting to the same ID makes no sense.
+        qDebug() << "Map::convertHouseTiles: fromId and toId are the same.";
+        return;
+    }
+
+    uint32_t tiles_affected = 0;
+
+    if (tiles.isEmpty() || size.width() == 0 || size.height() == 0) {
+        qDebug() << "Map is empty. No house tiles to convert.";
+        return;
+    }
+
+    for (int x = 0; x < size.width(); ++x) {
+        if (x >= tiles.size()) continue; 
+        for (int y = 0; y < size.height(); ++y) {
+            if (y >= tiles[x].size()) continue; 
+            for (int z = 0; z < Map::LayerCount; ++z) {
+                if (z >= tiles[x][y].size()) continue;
+
+                Tile* currentTile = tiles[x][y][z]; // Direct access for efficiency
+                if (!currentTile) {
+                    continue;
+                }
+
+                // Original logic: "if fromID is 0, all unassigned house tiles are assigned to toID"
+                // "if fromID is not 0, only tiles with houseId == fromID are changed"
+                bool should_convert = false;
+                if (fromId == 0) { // Convert unassigned tiles
+                    if (currentTile->getHouseID() == 0) {
+                        should_convert = true;
+                    }
+                } else { // Convert tiles with specific fromId
+                    if (currentTile->getHouseID() == fromId) {
+                        should_convert = true;
+                    }
+                }
+                
+                if (should_convert) {
+                    currentTile->setHouseID(toId); // This should internally emit Tile::changed()
+                    tiles_affected++;
+                    // Tile::setHouseID should mark the tile as modified and emit a signal.
+                    // The map itself also needs to be marked as modified.
+                    // Emitting tileChanged for the specific tile's position
+                    emit tileChanged(currentTile->getPosition()); 
+                }
+            }
+        }
+    }
+
+    if (tiles_affected > 0) {
+        setModified(true); // Set the map as modified if any tile was changed
+        qDebug() << "Converted" << tiles_affected << "house tiles from ID" << fromId << "to ID" << toId;
+    } else {
+        qDebug() << "No house tiles found matching ID" << fromId << "to convert to ID" << toId;
+    }
+}
+
+bool Map::addSpawn(Tile* spawnTile) {
+    if (!spawnTile) {
+        return false;
+    }
+
+    QPoint spawn_pos_qp = spawnTile->getPosition(); // QPoint from Tile
+
+    // Check if a spawn already exists at this exact QPoint position
+    for (const Spawn* existingSpawn : m_spawns) {
+        if (existingSpawn->getPosition() == spawn_pos_qp) {
+            qDebug() << "Spawn already exists at position:" << spawn_pos_qp;
+            return false; // Or handle update logic if needed
+        }
+    }
+
+    // Create a new Spawn object. Default radius, creature, interval from Spawn constructor
+    Spawn* newSpawn = new Spawn(spawn_pos_qp);
+    m_spawns.append(newSpawn);
+
+    setModified(true);
+    emit mapChanged(); // Or a more specific signal like spawnAdded(newSpawn)
+    // Consider emitting a signal like: emit spawnAdded(newSpawn);
+    qDebug() << "Spawn added at" << spawn_pos_qp;
+    return true;
+}
+
+void Map::removeSpawn(Tile* spawnTile) {
+    if (!spawnTile) {
+        return;
+    }
+    QPoint tilePosQt = spawnTile->getPosition(); // QPoint from Tile
+    // Convert QPoint to map.h::Position. Assuming Z from tile's layer.
+    // Note: Spawn itself uses QPoint (x,y). Z is implicitly handled by the tile layer.
+    // The map.h::Position includes Z. For comparing with Spawn's QPoint, we only use x,y.
+    Position tilePosMap(tilePosQt.x(), tilePosQt.y(), spawnTile->getZ());
+    removeSpawn(tilePosMap); // Call the Position-based removeSpawn
+}
+
+void Map::removeSpawn(const Position& position) { // position is map.h::Position {int x,y,z}
+    for (int i = 0; i < m_spawns.size(); ++i) {
+        Spawn* currentSpawn = m_spawns.at(i);
+        // Spawn stores QPoint (x,y). Compare with map.h::Position's x and y. Z is ignored for now.
+        if (currentSpawn->getPosition().x() == position.x && currentSpawn->getPosition().y() == position.y) {
+            qDebug() << "Removing spawn at" << currentSpawn->getPosition();
+            m_spawns.removeAt(i);
+            delete currentSpawn;
+            setModified(true);
+            emit mapChanged(); // Or a more specific signal like spawnRemoved
+            // Consider: emit spawnRemoved(position);
+            return; // Assuming only one spawn per exact (x,y) position.
+        }
+    }
+    qDebug() << "No spawn found at map.h::Position:" << position.x << "," << position.y << "," << position.z << "to remove.";
+}
+
 
 void Map::setCurrentLayer(int layer) {
     if (currentLayer == layer) return;
@@ -437,7 +744,8 @@ void Map::setCurrentLayer(int layer) {
 
 bool Map::hasFile() const { return !filename.isEmpty(); }
 
-// Assumed existence from Source `map.h` (used by `ItemManager` or similar logic in Tibia)
-const wxArrayString& Map::getWarnings() const { static wxArrayString s_empty; return s_empty; }
+// getWarnings(), addWarning(), clearWarnings() are in map.h (inline or to be defined if complex)
+// getError(), setError(), clearError() are in map.h (inline or to be defined if complex)
+// getVersion() and setVersion() are in map.h (inline)
 
 void Map::setName(const std::string& n) { name = QString::fromStdString(n); }

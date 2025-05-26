@@ -39,6 +39,17 @@ public:
         // ... more flags from original tile.h will be added as features are migrated
     };
 
+    // Tile map flags (can be combined with TileStateFlag if desired, or kept separate)
+    // These are typically stored in Tile::mapFlags
+    static const uint16_t TILE_FLAG_NONE = 0x0000;
+    static const uint16_t TILE_FLAG_PROTECTIONZONE = 0x0001; // PZ
+    static const uint16_t TILE_FLAG_NOPVP = 0x0002;          // No-PVP zone
+    static const uint16_t TILE_FLAG_NOLOGOUT = 0x0004;       // Cannot logout here
+    static const uint16_t TILE_FLAG_PVPZONE = 0x0008;        // PVP zone
+    // Add other flags as needed, e.g. TILE_FLAG_REFRESH, TILE_FLAG_HOUSE, TILE_FLAG_TOWN etc.
+    // from wxWidgets tile.h if they are to be stored in mapFlags.
+    // For now, only the requested ones are added.
+
     explicit Tile(const QPoint& position, QObject* parent = nullptr);
     Tile(int x, int y, int z, QObject* parent = nullptr);
     // If Tile(TileLocation& loc) is still used from original, adapt to Qt's position/struct
@@ -57,11 +68,11 @@ public:
 
     // Adding/removing/getting items and creatures from this specific tile
     // Ownership is managed by the Map class or specific item/creature managers
-    bool addItem(Item* item, Layer::Type layer); // Takes ownership or shares ptr? Map will decide.
-    bool removeItem(Item* item, Layer::Type layer);
-    QVector<Item*> getItemsByLayer(Layer::Type layer) const; // Returns pointers, not copies, based on Item properties/flags
+    Q_DECL_DEPRECATED bool addItem(Item* item, Layer::Type layer); // Takes ownership or shares ptr? Map will decide.
+    Q_DECL_DEPRECATED bool removeItem(Item* item, Layer::Type layer);
+    Q_DECL_DEPRECATED QVector<Item*> getItemsByLayer(Layer::Type layer) const; // Returns pointers, not copies, based on Item properties/flags
 
-    bool hasItem(Item* item, Layer::Type layer) const;
+    Q_DECL_DEPRECATED bool hasItem(Item* item, Layer::Type layer) const;
     void clearLayer(Layer::Type layer);
 
     // Creature management
@@ -190,6 +201,11 @@ public:
     bool isNoSpawn() const;
     void setNoSpawn(bool noSpawn);
     bool hasCollision() const; // If different from getCollision or for specific use by editor
+
+    // Item cleaning
+    uint32_t cleanInvalidItems(); // Returns count of removed items
+    uint32_t cleanDuplicateItems(const std::function<bool(uint16_t)>& isInRanges,
+                                 const std::function<bool(const Item&, const Item&)>& compareItemsFunc);
 
 signals:
     // Signals for UI/MapScene updates when content changes

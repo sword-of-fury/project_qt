@@ -160,6 +160,38 @@ public:
     // void generateIsland(); // Already exists via onGenerateIsland in MainMenu, connected to MainWindow::generateIsland
     // void createBorder(); // Already exists via onCreateBorder in MainMenu, connected to MainWindow::createBorder (placeholder)
 
+    // New public methods for Search menu actions
+    void findZones();
+    void findUniqueItems();
+    void findActionIdItems();
+    void findContainers();
+    void findWriteableItems();
+    void findEverythingSpecial();
+
+    // New public methods for Selection menu actions
+    void replaceOnSelection();
+    void findItemOnSelection();
+    void removeItemOnSelection();
+    void findEverythingOnSelection();
+    void findZonesOnSelection();
+    void findUniqueOnSelection();
+    void findActionIdOnSelection();
+    void findContainerOnSelection();
+    void findWriteableOnSelection();
+    void setSelectionMode(int mode);
+
+    // New public methods for Navigate menu actions
+    void gotoPreviousPosition();
+
+    // New public methods for Window menu actions
+    void showMinimap();
+    void newPalette();
+    void selectPalette(const QString& paletteName);
+    void toggleToolbarVisibility(const QString& toolbarName);
+
+    // New public methods for Experimental menu actions
+    void toggleExperimentalFog(bool checked);
+
 
 public slots: // Slots connected to various UI signals or map signals
     // General UI updates
@@ -227,6 +259,7 @@ private:
     QLabel* layerLabel;
     QLabel* selectionLabel;
     QLabel* zoomLabel;
+    QLabel* currentBrushLabel; // This was already added in a previous attempt, ensure it's correct.
     
     // Map data for display in lists
     QList<Item*> loadedItems; // Pointers to all loaded items for the item list

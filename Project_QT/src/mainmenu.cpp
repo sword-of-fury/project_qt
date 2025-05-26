@@ -23,10 +23,17 @@ MainMenu::MainMenu(MainWindow* parent) :
     // Populate each menu with actions and connect signals/slots
     createFileMenu();
     createEditMenu();
-    createViewMenu();
+    createViewMenu(); // Consolidates Editor, View, Show from XML
+    createSearchMenu(); // New
     createMapMenu();
+    createSelectionMenu(); // New
+    createNavigateMenu(); // New
     createToolsMenu();
-    createHelpMenu();
+    createWindowMenu(); // New
+    createExperimentalMenu(); // New
+    // createNetworkMenu(); // Already called (corresponds to Server in XML)
+    // createHelpMenu(); // Already called (corresponds to About in XML)
+
 
     // Update actions that depend on initial state (e.g., Undo/Redo disabled)
     updateUndoRedoActions(parentWindow->getUndoStack()->canUndo(), parentWindow->getUndoStack()->canRedo());
@@ -693,16 +700,460 @@ void MainMenu::onCreateBorder() {
     QMessageBox::information(parentWindow, tr("Border Editor"), tr("Border Editor dialog not yet implemented.")); 
 }
 void MainMenu::onTilesetEditor() { 
-    // parentWindow->openTilesetEditor();
-    QMessageBox::information(parentWindow, tr("Tileset Editor"), tr("Tileset Editor dialog not yet implemented.")); 
+    parentWindow->openTilesetEditor();
 }
 void MainMenu::onSelectionToDoodad() { 
-    // parentWindow->selectionToDoodad();
-    QMessageBox::information(parentWindow, tr("Selection to Doodad"), tr("Selection to Doodad brush conversion not yet implemented.")); 
+    parentWindow->selectionToDoodad();
 }
 void MainMenu::onToggleAutomagic() { parentWindow->toggleBorderSystem(automagicAction->isChecked()); } 
 // void MainMenu::onGenerateMap() { } // This slot is for File menu.
 
+// --- Placeholder Slot Implementations for New Menus (from previous step, will be moved or used by new create...Menu methods) ---
+
+// Search Menu Slots
+void MainMenu::onFindZones() { parentWindow->findZones(); }
+void MainMenu::onFindUniqueItems() { parentWindow->findUniqueItems(); }
+void MainMenu::onFindActionIdItems() { parentWindow->findActionIdItems(); }
+void MainMenu::onFindContainers() { parentWindow->findContainers(); }
+void MainMenu::onFindWriteableItems() { parentWindow->findWriteableItems(); }
+void MainMenu::onFindEverythingSpecial() { parentWindow->findEverythingSpecial(); }
+
+// Selection Menu Slots
+void MainMenu::onReplaceOnSelection() { parentWindow->replaceOnSelection(); }
+void MainMenu::onFindItemOnSelection() { parentWindow->findItemOnSelection(); }
+void MainMenu::onRemoveItemOnSelection() { parentWindow->removeItemOnSelection(); }
+void MainMenu::onFindEverythingOnSelection() { parentWindow->findEverythingOnSelection(); }
+void MainMenu::onFindZonesOnSelection() { parentWindow->findZonesOnSelection(); }
+void MainMenu::onFindUniqueOnSelection() { parentWindow->findUniqueOnSelection(); }
+void MainMenu::onFindActionIdOnSelection() { parentWindow->findActionIdOnSelection(); }
+void MainMenu::onFindContainerOnSelection() { parentWindow->findContainerOnSelection(); }
+void MainMenu::onFindWriteableOnSelection() { parentWindow->findWriteableOnSelection(); }
+void MainMenu::onSelectModeCompensate() { parentWindow->setSelectionMode(0 /* Compensate */); } // Assuming MainWindow has setSelectionMode
+void MainMenu::onSelectModeCurrent() { parentWindow->setSelectionMode(1 /* Current */); }
+void MainMenu::onSelectModeLower() { parentWindow->setSelectionMode(2 /* Lower */); }
+void MainMenu::onSelectModeVisible() { parentWindow->setSelectionMode(3 /* Visible */); }
+
+// Navigate Menu Slots
+void MainMenu::onGotoPreviousPosition() { parentWindow->gotoPreviousPosition(); }
+
+// Window Menu Slots
+void MainMenu::onShowMinimap() { parentWindow->showMinimap(); }
+void MainMenu::onNewPalette() { parentWindow->newPalette(); }
+void MainMenu::onSelectTerrainPalette() { parentWindow->selectPalette("Terrain" /* PaletteType::Terrain */); } // Assuming MainWindow has selectPalette
+void MainMenu::onSelectDoodadPalette() { parentWindow->selectPalette("Doodad" /* PaletteType::Doodad */); }
+void MainMenu::onSelectItemPalette() { parentWindow->selectPalette("Item" /* PaletteType::Item */); }
+void MainMenu::onSelectCollectionPalette() { parentWindow->selectPalette("Collection" /* PaletteType::Collection */); }
+void MainMenu::onSelectHousePalette() { parentWindow->selectPalette("House" /* PaletteType::House */); }
+void MainMenu::onSelectCreaturePalette() { parentWindow->selectPalette("Creature" /* PaletteType::Creature */); }
+void MainMenu::onSelectWaypointPalette() { parentWindow->selectPalette("Waypoint" /* PaletteType::Waypoint */); }
+void MainMenu::onSelectRawPalette() { parentWindow->selectPalette("RAW" /* PaletteType::RAW */); }
+void MainMenu::onViewBrushesToolbar() { parentWindow->toggleToolbarVisibility("Brushes"); } 
+void MainMenu::onViewPositionToolbar() { parentWindow->toggleToolbarVisibility("Position"); }
+void MainMenu::onViewSizesToolbar() { parentWindow->toggleToolbarVisibility("Sizes"); }
+void MainMenu::onViewStandardToolbar() { parentWindow->toggleToolbarVisibility("Standard"); } // Toggles mainToolBar
+
+// Experimental Menu Slots
+void MainMenu::onExperimentalFog() { parentWindow->toggleExperimentalFog(experimentalFogAction->isChecked()); }
+
+// --- New Menu Creation Methods ---
+
+void MainMenu::createSearchMenu() {
+    searchMenu = addMenu(tr("&Search"));
+    createAndAddAction(searchMenu, tr("Find &Item..."), this, SLOT(onFindItem()), QKeySequence("Ctrl+F"));
+    createAndAddAction(searchMenu, tr("Find &Creature..."), this, SLOT(onFindCreature()), QKeySequence("Ctrl+Shift+C"));
+    searchMenu->addSeparator();
+    findZonesAction = createAndAddAction(searchMenu, tr("Find &Zones"), this, SLOT(onFindZones()));
+    findUniqueAction = createAndAddAction(searchMenu, tr("Find &Unique Items"), this, SLOT(onFindUniqueItems()), QKeySequence(Qt::Key_L));
+    findActionIdAction = createAndAddAction(searchMenu, tr("Find Items with &ActionID"), this, SLOT(onFindActionIdItems()));
+    findContainerAction = createAndAddAction(searchMenu, tr("Find &Containers"), this, SLOT(onFindContainers()));
+    findWriteableAction = createAndAddAction(searchMenu, tr("Find &Writeable Items"), this, SLOT(onFindWriteableItems()));
+    searchMenu->addSeparator();
+    findEverythingAction = createAndAddAction(searchMenu, tr("Find &Everything Special"), this, SLOT(onFindEverythingSpecial()));
+}
+
+void MainMenu::createSelectionMenu() {
+    selectionMenu = addMenu(tr("S&election"));
+    replaceOnSelectionAction = createAndAddAction(selectionMenu, tr("&Replace Items on Selection..."), this, SLOT(onReplaceOnSelection()));
+    findItemOnSelectionAction = createAndAddAction(selectionMenu, tr("&Find Item on Selection..."), this, SLOT(onFindItemOnSelection()));
+    removeItemOnSelectionAction = createAndAddAction(selectionMenu, tr("Remove Item on Selection..."), this, SLOT(onRemoveItemOnSelection()));
+    selectionMenu->addSeparator();
+
+    findOnSelectionSubMenu = selectionMenu->addMenu(tr("Find on Selection"));
+    findEverythingOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Everything Special"), this, SLOT(onFindEverythingOnSelection()));
+    findOnSelectionSubMenu->addSeparator();
+    findZonesOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Zones"), this, SLOT(onFindZonesOnSelection()));
+    findUniqueOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Unique Items"), this, SLOT(onFindUniqueOnSelection()));
+    findActionIdOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find Items with &ActionID"), this, SLOT(onFindActionIdOnSelection()));
+    findContainerOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Containers"), this, SLOT(onFindContainerOnSelection()));
+    findWriteableOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Writeable Items"), this, SLOT(onFindWriteableOnSelection()));
+    
+    selectionMenu->addSeparator();
+    selectionModeSubMenu = selectionMenu->addMenu(tr("Selection Mode"));
+    selectionModeGroup = new QActionGroup(this);
+    selectionModeGroup->setExclusive(true);
+    selectModeCompensateAction = createAndAddAction(selectionModeSubMenu, tr("Compensate Selection"), this, SLOT(onSelectModeCompensate()), QKeySequence(), true);
+    selectionModeSubMenu->addSeparator();
+    selectModeCurrentAction = createAndAddAction(selectionModeSubMenu, tr("Current Floor"), this, SLOT(onSelectModeCurrent()), QKeySequence(), true);
+    selectModeLowerAction = createAndAddAction(selectionModeSubMenu, tr("Lower Floors"), this, SLOT(onSelectModeLower()), QKeySequence(), true);
+    selectModeVisibleAction = createAndAddAction(selectionModeSubMenu, tr("Visible Floors"), this, SLOT(onSelectModeVisible()), QKeySequence(), true);
+    selectionModeGroup->addAction(selectModeCompensateAction);
+    selectionModeGroup->addAction(selectModeCurrentAction);
+    selectionModeGroup->addAction(selectModeLowerAction);
+    selectionModeGroup->addAction(selectModeVisibleAction);
+    if(selectModeCurrentAction) selectModeCurrentAction->setChecked(true); 
+
+    selectionMenu->addSeparator();
+    createAndAddAction(selectionMenu, tr("Borderize Selection"), this, SLOT(onBorderizeSelection()), QKeySequence("Ctrl+B"));
+    createAndAddAction(selectionMenu, tr("Randomize Selection"), this, SLOT(onRandomizeSelection()));
+}
+
+void MainMenu::createNavigateMenu() {
+    navigateMenu = addMenu(tr("Na&vigate"));
+    gotoPreviousPositionAction = createAndAddAction(navigateMenu, tr("Go to Previous Position"), this, SLOT(onGotoPreviousPosition()), QKeySequence(Qt::Key_P));
+    createAndAddAction(navigateMenu, tr("Jump to Brush..."), this, SLOT(onJumpToBrush()), QKeySequence(Qt::Key_J));
+    createAndAddAction(navigateMenu, tr("Jump to Item..."), this, SLOT(onJumpToItemBrush()), QKeySequence("Ctrl+J"));
+}
+
+void MainMenu::createWindowMenu() {
+    if (!windowMenu) { 
+        QList<QMenu*> topLevelMenus = findChildren<QMenu*>(QString(), Qt::FindDirectChildrenOnly);
+        for(QMenu* m : topLevelMenus) {
+            if(m->title() == tr("&Window")) {
+                windowMenu = m;
+                break;
+            }
+        }
+        if(!windowMenu) windowMenu = addMenu(tr("&Window")); 
+    }
+    // windowMenu->clear(); // Avoid clearing if it's already populated by addMenu in constructor
+
+    showMinimapAction = createAndAddAction(windowMenu, tr("Minimap"), this, SLOT(onShowMinimap()), QKeySequence(Qt::Key_M));
+    newPaletteAction = createAndAddAction(windowMenu, tr("New Palette"), this, SLOT(onNewPalette()));
+    windowMenu->addSeparator();
+
+    paletteSubMenu = windowMenu->addMenu(tr("Palette"));
+    paletteSelectionGroup = new QActionGroup(this);
+    paletteSelectionGroup->setExclusive(true);
+    selectTerrainPaletteAction = createAndAddAction(paletteSubMenu, tr("Terrain"), this, SLOT(onSelectTerrainPalette()), QKeySequence(Qt::Key_T), true);
+    selectDoodadPaletteAction = createAndAddAction(paletteSubMenu, tr("Doodad"), this, SLOT(onSelectDoodadPalette()), QKeySequence(Qt::Key_D), true);
+    selectItemBackgroundPaletteAction = createAndAddAction(paletteSubMenu, tr("Item"), this, SLOT(onSelectItemPalette()), QKeySequence(Qt::Key_I), true);
+    selectCollectionPaletteAction = createAndAddAction(paletteSubMenu, tr("Collection"), this, SLOT(onSelectCollectionPalette()), QKeySequence(Qt::Key_N), true);
+    selectHousePaletteAction = createAndAddAction(paletteSubMenu, tr("House"), this, SLOT(onSelectHousePalette()), QKeySequence(Qt::Key_H), true);
+    selectCreaturePaletteAction = createAndAddAction(paletteSubMenu, tr("Creature"), this, SLOT(onSelectCreaturePalette()), QKeySequence(Qt::Key_C), true);
+    selectWaypointPaletteAction = createAndAddAction(paletteSubMenu, tr("Waypoint"), this, SLOT(onSelectWaypointPalette()), QKeySequence(Qt::Key_W), true);
+    selectRawPaletteAction = createAndAddAction(paletteSubMenu, tr("RAW"), this, SLOT(onSelectRawPalette()), QKeySequence(Qt::Key_R), true);
+    paletteSelectionGroup->addAction(selectTerrainPaletteAction);
+    paletteSelectionGroup->addAction(selectDoodadPaletteAction);
+    paletteSelectionGroup->addAction(selectItemBackgroundPaletteAction);
+    paletteSelectionGroup->addAction(selectCollectionPaletteAction);
+    paletteSelectionGroup->addAction(selectHousePaletteAction);
+    paletteSelectionGroup->addAction(selectCreaturePaletteAction);
+    paletteSelectionGroup->addAction(selectWaypointPaletteAction);
+    paletteSelectionGroup->addAction(selectRawPaletteAction);
+    if(selectTerrainPaletteAction) selectTerrainPaletteAction->setChecked(true); 
+
+    toolbarsSubMenu = windowMenu->addMenu(tr("Toolbars"));
+    viewBrushesToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Brushes"), this, SLOT(onViewBrushesToolbar()), QKeySequence(), true);
+    viewPositionToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Position"), this, SLOT(onViewPositionToolbar()), QKeySequence(), true);
+    viewSizesToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Sizes"), this, SLOT(onViewSizesToolbar()), QKeySequence(), true);
+    viewStandardToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Standard"), this, SLOT(onViewStandardToolbar()), QKeySequence(), true);
+    
+    if(parentWindow && parentWindow->mainToolBar) { 
+      viewStandardToolbarAction->setChecked(parentWindow->mainToolBar->isVisible());
+    } else {
+      viewStandardToolbarAction->setChecked(true); 
+    }
+    viewBrushesToolbarAction->setChecked(true); 
+    viewPositionToolbarAction->setChecked(true); 
+    viewSizesToolbarAction->setChecked(true); 
+}
+
+void MainMenu::createExperimentalMenu() {
+    experimentalMenu = addMenu(tr("E&xperimental"));
+    experimentalFogAction = createAndAddAction(experimentalMenu, tr("Fog in light view"), this, SLOT(onExperimentalFog()), QKeySequence(), true);
+}
+
+
+// --- New Menu Creation Methods ---
+
+void MainMenu::createSearchMenu() {
+    searchMenu = addMenu(tr("&Search"));
+    // "Find Item..." (action: FIND_ITEM, hotkey: Ctrl+F) - Slot onFindItem exists.
+    createAndAddAction(searchMenu, tr("Find &Item..."), this, SLOT(onFindItem()), QKeySequence::Find);
+    // "Find Creature..." (action: FIND_CREATURE, hotkey: Ctrl+Shift+C) - Slot onFindCreature exists.
+    createAndAddAction(searchMenu, tr("Find &Creature..."), this, SLOT(onFindCreature()), QKeySequence("Ctrl+Shift+C"));
+    searchMenu->addSeparator();
+    findZonesAction = createAndAddAction(searchMenu, tr("Find &Zones"), this, SLOT(onFindZones()));
+    findUniqueAction = createAndAddAction(searchMenu, tr("Find &Unique Items"), this, SLOT(onFindUniqueItems()), QKeySequence(Qt::Key_L));
+    findActionIdAction = createAndAddAction(searchMenu, tr("Find Items with &ActionID"), this, SLOT(onFindActionIdItems()));
+    findContainerAction = createAndAddAction(searchMenu, tr("Find &Containers"), this, SLOT(onFindContainers()));
+    findWriteableAction = createAndAddAction(searchMenu, tr("Find &Writeable Items"), this, SLOT(onFindWriteableItems()));
+    searchMenu->addSeparator();
+    findEverythingAction = createAndAddAction(searchMenu, tr("Find &Everything Special"), this, SLOT(onFindEverythingSpecial()));
+}
+
+void MainMenu::createSelectionMenu() {
+    selectionMenu = addMenu(tr("S&election"));
+    replaceOnSelectionAction = createAndAddAction(selectionMenu, tr("&Replace Items on Selection..."), this, SLOT(onReplaceOnSelection()));
+    findItemOnSelectionAction = createAndAddAction(selectionMenu, tr("&Find Item on Selection..."), this, SLOT(onFindItemOnSelection()));
+    removeItemOnSelectionAction = createAndAddAction(selectionMenu, tr("Remove Item on Selection..."), this, SLOT(onRemoveItemOnSelection()));
+    selectionMenu->addSeparator();
+
+    findOnSelectionSubMenu = selectionMenu->addMenu(tr("Find on Selection"));
+    findEverythingOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Everything Special"), this, SLOT(onFindEverythingOnSelection()));
+    findOnSelectionSubMenu->addSeparator();
+    findZonesOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Zones"), this, SLOT(onFindZonesOnSelection()));
+    findUniqueOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Unique Items"), this, SLOT(onFindUniqueOnSelection()));
+    findActionIdOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find Items with &ActionID"), this, SLOT(onFindActionIdOnSelection()));
+    findContainerOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Containers"), this, SLOT(onFindContainerOnSelection()));
+    findWriteableOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Writeable Items"), this, SLOT(onFindWriteableOnSelection()));
+    
+    selectionMenu->addSeparator();
+    selectionModeSubMenu = selectionMenu->addMenu(tr("Selection Mode"));
+    selectionModeGroup = new QActionGroup(this);
+    selectionModeGroup->setExclusive(true);
+    selectModeCompensateAction = createAndAddAction(selectionModeSubMenu, tr("Compensate Selection"), this, SLOT(onSelectModeCompensate()), QKeySequence(), true);
+    selectionModeSubMenu->addSeparator();
+    selectModeCurrentAction = createAndAddAction(selectionModeSubMenu, tr("Current Floor"), this, SLOT(onSelectModeCurrent()), QKeySequence(), true);
+    selectModeLowerAction = createAndAddAction(selectionModeSubMenu, tr("Lower Floors"), this, SLOT(onSelectModeLower()), QKeySequence(), true);
+    selectModeVisibleAction = createAndAddAction(selectionModeSubMenu, tr("Visible Floors"), this, SLOT(onSelectModeVisible()), QKeySequence(), true);
+    selectionModeGroup->addAction(selectModeCompensateAction);
+    selectionModeGroup->addAction(selectModeCurrentAction);
+    selectionModeGroup->addAction(selectModeLowerAction);
+    selectionModeGroup->addAction(selectModeVisibleAction);
+    selectModeCurrentAction->setChecked(true); // Default selection mode
+
+    selectionMenu->addSeparator();
+    // Borderize and Randomize selection actions are already in Edit menu and have slots.
+    // We can reuse them or create new ones if context is different. For now, assume reuse.
+    // Adding them directly to this menu as per XML structure:
+    createAndAddAction(selectionMenu, tr("Borderize Selection"), this, SLOT(onBorderizeSelection()), QKeySequence("Ctrl+B"));
+    createAndAddAction(selectionMenu, tr("Randomize Selection"), this, SLOT(onRandomizeSelection()));
+}
+
+void MainMenu::createNavigateMenu() {
+    navigateMenu = addMenu(tr("Na&vigate"));
+    gotoPreviousPositionAction = createAndAddAction(navigateMenu, tr("Go to Previous Position"), this, SLOT(onGotoPreviousPosition()), QKeySequence(Qt::Key_P));
+    // Jump to Brush/Item slots already exist from Edit menu.
+    createAndAddAction(navigateMenu, tr("Jump to Brush..."), this, SLOT(onJumpToBrush()), QKeySequence(Qt::Key_J));
+    createAndAddAction(navigateMenu, tr("Jump to Item..."), this, SLOT(onJumpToItemBrush()), QKeySequence("Ctrl+J"));
+    // Floor submenu is part of ViewMenu as per standard Qt practice and previous implementation.
+}
+
+void MainMenu::createWindowMenu() {
+    // The 'Window' menu was added in the constructor. Assign it to windowMenu member.
+    // If addMenu returns the QMenu*, then:
+    // windowMenu = addMenu(tr("&Window")); 
+    // Or if it was already added and just needs population:
+    // QList<QMenu*> menus = findChildren<QMenu*>(); for (QMenu* m : menus) if(m->title() == tr("&Window")) windowMenu = m;
+    // For simplicity, assuming it was assigned in constructor or created fresh here.
+    // If windowMenu member was not used before, create it:
+    if (!windowMenu) { // Check if it was already created (e.g. for docks)
+        windowMenu = addMenu(tr("&Window"));
+    }
+
+    showMinimapAction = createAndAddAction(windowMenu, tr("Minimap"), this, SLOT(onShowMinimap()), QKeySequence(Qt::Key_M));
+    newPaletteAction = createAndAddAction(windowMenu, tr("New Palette"), this, SLOT(onNewPalette()));
+    windowMenu->addSeparator();
+
+    paletteSubMenu = windowMenu->addMenu(tr("Palette"));
+    paletteSelectionGroup = new QActionGroup(this);
+    paletteSelectionGroup->setExclusive(true);
+    selectTerrainPaletteAction = createAndAddAction(paletteSubMenu, tr("Terrain"), this, SLOT(onSelectTerrainPalette()), QKeySequence(Qt::Key_T), true);
+    selectDoodadPaletteAction = createAndAddAction(paletteSubMenu, tr("Doodad"), this, SLOT(onSelectDoodadPalette()), QKeySequence(Qt::Key_D), true);
+    selectItemBackgroundPaletteAction = createAndAddAction(paletteSubMenu, tr("Item"), this, SLOT(onSelectItemPalette()), QKeySequence(Qt::Key_I), true);
+    selectCollectionPaletteAction = createAndAddAction(paletteSubMenu, tr("Collection"), this, SLOT(onSelectCollectionPalette()), QKeySequence(Qt::Key_N), true); // N from XML, remapped from Item's N
+    selectHousePaletteAction = createAndAddAction(paletteSubMenu, tr("House"), this, SLOT(onSelectHousePalette()), QKeySequence(Qt::Key_H), true);
+    selectCreaturePaletteAction = createAndAddAction(paletteSubMenu, tr("Creature"), this, SLOT(onSelectCreaturePalette()), QKeySequence(Qt::Key_C), true);
+    selectWaypointPaletteAction = createAndAddAction(paletteSubMenu, tr("Waypoint"), this, SLOT(onSelectWaypointPalette()), QKeySequence(Qt::Key_W), true);
+    selectRawPaletteAction = createAndAddAction(paletteSubMenu, tr("RAW"), this, SLOT(onSelectRawPalette()), QKeySequence(Qt::Key_R), true);
+    paletteSelectionGroup->addAction(selectTerrainPaletteAction);
+    paletteSelectionGroup->addAction(selectDoodadPaletteAction);
+    paletteSelectionGroup->addAction(selectItemBackgroundPaletteAction);
+    paletteSelectionGroup->addAction(selectCollectionPaletteAction);
+    paletteSelectionGroup->addAction(selectHousePaletteAction);
+    paletteSelectionGroup->addAction(selectCreaturePaletteAction);
+    paletteSelectionGroup->addAction(selectWaypointPaletteAction);
+    paletteSelectionGroup->addAction(selectRawPaletteAction);
+    selectTerrainPaletteAction->setChecked(true); // Default palette
+
+    toolbarsSubMenu = windowMenu->addMenu(tr("Toolbars"));
+    viewBrushesToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Brushes"), this, SLOT(onViewBrushesToolbar()), QKeySequence(), true);
+    viewPositionToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Position"), this, SLOT(onViewPositionToolbar()), QKeySequence(), true);
+    viewSizesToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Sizes"), this, SLOT(onViewSizesToolbar()), QKeySequence(), true);
+    viewStandardToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Standard"), this, SLOT(onViewStandardToolbar()), QKeySequence(), true);
+    // Set initial checked state based on MainWindow's toolbars
+    viewStandardToolbarAction->setChecked(parentWindow->mainToolBar->isVisible());
+    // Add similar for other toolbars if they exist and are tracked.
+}
+
+void MainMenu::createExperimentalMenu() {
+    experimentalMenu = addMenu(tr("E&xperimental"));
+    experimentalFogAction = createAndAddAction(experimentalMenu, tr("Fog in light view"), this, SLOT(onExperimentalFog()), QKeySequence(), true);
+}
+
+// --- Placeholder Slot Implementations for New Menus ---
+
+// Search Menu Slots
+void MainMenu::onFindZones() { QMessageBox::information(parentWindow, tr("Find"), tr("Find Zones not implemented.")); }
+void MainMenu::onFindUniqueItems() { QMessageBox::information(parentWindow, tr("Find"), tr("Find Unique Items not implemented.")); }
+void MainMenu::onFindActionIdItems() { QMessageBox::information(parentWindow, tr("Find"), tr("Find Items with ActionID not implemented.")); }
+void MainMenu::onFindContainers() { QMessageBox::information(parentWindow, tr("Find"), tr("Find Containers not implemented.")); }
+void MainMenu::onFindWriteableItems() { QMessageBox::information(parentWindow, tr("Find"), tr("Find Writeable Items not implemented.")); }
+void MainMenu::onFindEverythingSpecial() { QMessageBox::information(parentWindow, tr("Find"), tr("Find Everything Special not implemented.")); }
+
+// Selection Menu Slots
+void MainMenu::onReplaceOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Replace Items on Selection not implemented.")); }
+void MainMenu::onFindItemOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Item on Selection not implemented.")); }
+void MainMenu::onRemoveItemOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Remove Item on Selection not implemented.")); }
+void MainMenu::onFindEverythingOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Everything Special on Selection not implemented.")); }
+void MainMenu::onFindZonesOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Zones on Selection not implemented.")); }
+void MainMenu::onFindUniqueOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Unique Items on Selection not implemented.")); }
+void MainMenu::onFindActionIdOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Items with ActionID on Selection not implemented.")); }
+void MainMenu::onFindContainerOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Containers on Selection not implemented.")); }
+void MainMenu::onFindWriteableOnSelection() { QMessageBox::information(parentWindow, tr("Selection"), tr("Find Writeable Items on Selection not implemented.")); }
+void MainMenu::onSelectModeCompensate() { parentWindow->setSelectionMode(0 /* Compensate */); }
+void MainMenu::onSelectModeCurrent() { parentWindow->setSelectionMode(1 /* Current */); }
+void MainMenu::onSelectModeLower() { parentWindow->setSelectionMode(2 /* Lower */); }
+void MainMenu::onSelectModeVisible() { parentWindow->setSelectionMode(3 /* Visible */); }
+
+// Navigate Menu Slots
+void MainMenu::onGotoPreviousPosition() { parentWindow->gotoPreviousPosition(); }
+
+// Window Menu Slots
+void MainMenu::onShowMinimap() { parentWindow->showMinimap(); }
+void MainMenu::onNewPalette() { parentWindow->newPalette(); }
+void MainMenu::onSelectTerrainPalette() { parentWindow->selectPalette("Terrain"); }
+void MainMenu::onSelectDoodadPalette() { parentWindow->selectPalette("Doodad"); }
+void MainMenu::onSelectItemPalette() { parentWindow->selectPalette("Item"); }
+void MainMenu::onSelectCollectionPalette() { parentWindow->selectPalette("Collection"); }
+void MainMenu::onSelectHousePalette() { parentWindow->selectPalette("House"); }
+void MainMenu::onSelectCreaturePalette() { parentWindow->selectPalette("Creature"); }
+void MainMenu::onSelectWaypointPalette() { parentWindow->selectPalette("Waypoint"); }
+void MainMenu::onSelectRawPalette() { parentWindow->selectPalette("RAW"); }
+void MainMenu::onViewBrushesToolbar() { parentWindow->toggleToolbarVisibility("Brushes"); } // Assumes MainWindow can identify toolbars by name/ID
+void MainMenu::onViewPositionToolbar() { parentWindow->toggleToolbarVisibility("Position"); }
+void MainMenu::onViewSizesToolbar() { parentWindow->toggleToolbarVisibility("Sizes"); }
+void MainMenu::onViewStandardToolbar() { parentWindow->toggleToolbarVisibility("Standard"); } // Toggles mainToolBar
+
+// Experimental Menu Slots
+void MainMenu::onExperimentalFog() { parentWindow->toggleExperimentalFog(qobject_cast<QAction*>(sender())->isChecked()); }
+
+// --- New Menu Creation Methods ---
+
+void MainMenu::createSearchMenu() {
+    searchMenu = addMenu(tr("&Search"));
+    // "Find Item..." (action: FIND_ITEM, hotkey: Ctrl+F) - Slot onFindItem exists.
+    createAndAddAction(searchMenu, tr("Find &Item..."), this, SLOT(onFindItem()), QKeySequence::Find);
+    // "Find Creature..." (action: FIND_CREATURE, hotkey: Ctrl+Shift+C) - Slot onFindCreature exists.
+    createAndAddAction(searchMenu, tr("Find &Creature..."), this, SLOT(onFindCreature()), QKeySequence("Ctrl+Shift+C"));
+    searchMenu->addSeparator();
+    findZonesAction = createAndAddAction(searchMenu, tr("Find &Zones"), this, SLOT(onFindZones()));
+    findUniqueAction = createAndAddAction(searchMenu, tr("Find &Unique Items"), this, SLOT(onFindUniqueItems()), QKeySequence(Qt::Key_L));
+    findActionIdAction = createAndAddAction(searchMenu, tr("Find Items with &ActionID"), this, SLOT(onFindActionIdItems()));
+    findContainerAction = createAndAddAction(searchMenu, tr("Find &Containers"), this, SLOT(onFindContainers()));
+    findWriteableAction = createAndAddAction(searchMenu, tr("Find &Writeable Items"), this, SLOT(onFindWriteableItems()));
+    searchMenu->addSeparator();
+    findEverythingAction = createAndAddAction(searchMenu, tr("Find &Everything Special"), this, SLOT(onFindEverythingSpecial()));
+}
+
+void MainMenu::createSelectionMenu() {
+    selectionMenu = addMenu(tr("S&election"));
+    replaceOnSelectionAction = createAndAddAction(selectionMenu, tr("&Replace Items on Selection..."), this, SLOT(onReplaceOnSelection()));
+    findItemOnSelectionAction = createAndAddAction(selectionMenu, tr("&Find Item on Selection..."), this, SLOT(onFindItemOnSelection()));
+    removeItemOnSelectionAction = createAndAddAction(selectionMenu, tr("Remove Item on Selection..."), this, SLOT(onRemoveItemOnSelection()));
+    selectionMenu->addSeparator();
+
+    findOnSelectionSubMenu = selectionMenu->addMenu(tr("Find on Selection"));
+    findEverythingOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Everything Special"), this, SLOT(onFindEverythingOnSelection()));
+    findOnSelectionSubMenu->addSeparator();
+    findZonesOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Zones"), this, SLOT(onFindZonesOnSelection()));
+    findUniqueOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Unique Items"), this, SLOT(onFindUniqueOnSelection()));
+    findActionIdOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find Items with &ActionID"), this, SLOT(onFindActionIdOnSelection()));
+    findContainerOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Containers"), this, SLOT(onFindContainerOnSelection()));
+    findWriteableOnSelectionAction = createAndAddAction(findOnSelectionSubMenu, tr("Find &Writeable Items"), this, SLOT(onFindWriteableOnSelection()));
+    
+    selectionMenu->addSeparator();
+    selectionModeSubMenu = selectionMenu->addMenu(tr("Selection Mode"));
+    selectionModeGroup = new QActionGroup(this);
+    selectionModeGroup->setExclusive(true);
+    selectModeCompensateAction = createAndAddAction(selectionModeSubMenu, tr("Compensate Selection"), this, SLOT(onSelectModeCompensate()), QKeySequence(), true);
+    selectionModeSubMenu->addSeparator();
+    selectModeCurrentAction = createAndAddAction(selectionModeSubMenu, tr("Current Floor"), this, SLOT(onSelectModeCurrent()), QKeySequence(), true);
+    selectModeLowerAction = createAndAddAction(selectionModeSubMenu, tr("Lower Floors"), this, SLOT(onSelectModeLower()), QKeySequence(), true);
+    selectModeVisibleAction = createAndAddAction(selectionModeSubMenu, tr("Visible Floors"), this, SLOT(onSelectModeVisible()), QKeySequence(), true);
+    selectionModeGroup->addAction(selectModeCompensateAction);
+    selectionModeGroup->addAction(selectModeCurrentAction);
+    selectionModeGroup->addAction(selectModeLowerAction);
+    selectionModeGroup->addAction(selectModeVisibleAction);
+    selectModeCurrentAction->setChecked(true); // Default selection mode
+
+    selectionMenu->addSeparator();
+    createAndAddAction(selectionMenu, tr("Borderize Selection"), this, SLOT(onBorderizeSelection()), QKeySequence("Ctrl+B"));
+    createAndAddAction(selectionMenu, tr("Randomize Selection"), this, SLOT(onRandomizeSelection()));
+}
+
+void MainMenu::createNavigateMenu() {
+    navigateMenu = addMenu(tr("Na&vigate"));
+    gotoPreviousPositionAction = createAndAddAction(navigateMenu, tr("Go to Previous Position"), this, SLOT(onGotoPreviousPosition()), QKeySequence(Qt::Key_P));
+    createAndAddAction(navigateMenu, tr("Jump to Brush..."), this, SLOT(onJumpToBrush()), QKeySequence(Qt::Key_J));
+    createAndAddAction(navigateMenu, tr("Jump to Item..."), this, SLOT(onJumpToItemBrush()), QKeySequence("Ctrl+J"));
+}
+
+void MainMenu::createWindowMenu() {
+    if (!windowMenu) { 
+        windowMenu = addMenu(tr("&Window")); // Ensure windowMenu is assigned if not done in constructor
+    } else {
+        // Clear existing actions if this method is called multiple times for update, though typically called once.
+        // windowMenu->clear(); 
+    }
+
+    showMinimapAction = createAndAddAction(windowMenu, tr("Minimap"), this, SLOT(onShowMinimap()), QKeySequence(Qt::Key_M));
+    newPaletteAction = createAndAddAction(windowMenu, tr("New Palette"), this, SLOT(onNewPalette()));
+    windowMenu->addSeparator();
+
+    paletteSubMenu = windowMenu->addMenu(tr("Palette"));
+    paletteSelectionGroup = new QActionGroup(this);
+    paletteSelectionGroup->setExclusive(true);
+    selectTerrainPaletteAction = createAndAddAction(paletteSubMenu, tr("Terrain"), this, SLOT(onSelectTerrainPalette()), QKeySequence(Qt::Key_T), true);
+    selectDoodadPaletteAction = createAndAddAction(paletteSubMenu, tr("Doodad"), this, SLOT(onSelectDoodadPalette()), QKeySequence(Qt::Key_D), true);
+    selectItemBackgroundPaletteAction = createAndAddAction(paletteSubMenu, tr("Item"), this, SLOT(onSelectItemPalette()), QKeySequence(Qt::Key_I), true);
+    selectCollectionPaletteAction = createAndAddAction(paletteSubMenu, tr("Collection"), this, SLOT(onSelectCollectionPalette()), QKeySequence(Qt::Key_N), true);
+    selectHousePaletteAction = createAndAddAction(paletteSubMenu, tr("House"), this, SLOT(onSelectHousePalette()), QKeySequence(Qt::Key_H), true);
+    selectCreaturePaletteAction = createAndAddAction(paletteSubMenu, tr("Creature"), this, SLOT(onSelectCreaturePalette()), QKeySequence(Qt::Key_C), true);
+    selectWaypointPaletteAction = createAndAddAction(paletteSubMenu, tr("Waypoint"), this, SLOT(onSelectWaypointPalette()), QKeySequence(Qt::Key_W), true);
+    selectRawPaletteAction = createAndAddAction(paletteSubMenu, tr("RAW"), this, SLOT(onSelectRawPalette()), QKeySequence(Qt::Key_R), true);
+    paletteSelectionGroup->addAction(selectTerrainPaletteAction);
+    paletteSelectionGroup->addAction(selectDoodadPaletteAction);
+    paletteSelectionGroup->addAction(selectItemBackgroundPaletteAction);
+    paletteSelectionGroup->addAction(selectCollectionPaletteAction);
+    paletteSelectionGroup->addAction(selectHousePaletteAction);
+    paletteSelectionGroup->addAction(selectCreaturePaletteAction);
+    paletteSelectionGroup->addAction(selectWaypointPaletteAction);
+    paletteSelectionGroup->addAction(selectRawPaletteAction);
+    if(selectTerrainPaletteAction) selectTerrainPaletteAction->setChecked(true); 
+
+    toolbarsSubMenu = windowMenu->addMenu(tr("Toolbars"));
+    viewBrushesToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Brushes"), this, SLOT(onViewBrushesToolbar()), QKeySequence(), true);
+    viewPositionToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Position"), this, SLOT(onViewPositionToolbar()), QKeySequence(), true);
+    viewSizesToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Sizes"), this, SLOT(onViewSizesToolbar()), QKeySequence(), true);
+    viewStandardToolbarAction = createAndAddAction(toolbarsSubMenu, tr("Standard"), this, SLOT(onViewStandardToolbar()), QKeySequence(), true);
+    
+    if(parentWindow && parentWindow->mainToolBar) { // Check parentWindow and mainToolBar
+      viewStandardToolbarAction->setChecked(parentWindow->mainToolBar->isVisible());
+    } else {
+      viewStandardToolbarAction->setChecked(true); // Default if not accessible
+    }
+    // Assuming other toolbars might be docks or not direct members of MainWindow for isVisible check here.
+    viewBrushesToolbarAction->setChecked(true); // Example default
+    viewPositionToolbarAction->setChecked(true); // Example default
+    viewSizesToolbarAction->setChecked(true); // Example default
+}
+
+void MainMenu::createExperimentalMenu() {
+    experimentalMenu = addMenu(tr("E&xperimental"));
+    experimentalFogAction = createAndAddAction(experimentalMenu, tr("Fog in light view"), this, SLOT(onExperimentalFog()), QKeySequence(), true);
+}
 
 // --- Network/Live Menu Slots ---
 void MainMenu::onStartLive() { QMessageBox::information(parentWindow, tr("Live Editor"), tr("Live Editor (Host) not yet implemented.")); }

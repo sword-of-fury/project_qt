@@ -511,14 +511,50 @@ void MainWindow::toggleBorderSystem(bool enabled) {
 
 // --- Tool/Brush Operations ---
 void MainWindow::setCurrentTool(Brush::Type toolType) {
-    mapView->setCurrentTool(toolType);
-    if (toolType == Brush::Type::Selection) {
-        selectionToolbar->setVisible(true); // Show selection-specific toolbar.
-    } else {
-        selectionToolbar->setVisible(false); // Hide.
+    Brush* newBrush = BrushManager::getInstance().getBrush(toolType);
+    if (mapView) {
+        mapView->setBrush(newBrush); 
+        mapView->setCurrentTool(toolType); 
     }
-    // Update toolbar buttons based on new tool (e.g. check the selected tool).
-    mainToolBar->onToolChanged(static_cast<int>(toolType)); // Assumed a similar slot exists in mainToolBar.
+
+    if (selectionToolbar) { 
+        if (toolType == Brush::Type::Selection) {
+            selectionToolbar->setVisible(true);
+            if (mapView) { 
+                selectionToolbar->setMapView(mapView);
+            }
+            
+            Brush* currentBrushInView = (mapView ? mapView->getBrush() : newBrush);
+            SelectionBrush* selBrush = dynamic_cast<SelectionBrush*>(currentBrushInView); 
+            
+            if (!selBrush && newBrush && newBrush->getType() == Brush::Type::Selection) { 
+                 selBrush = dynamic_cast<SelectionBrush*>(newBrush);
+            }
+
+            if (selBrush) {
+                selectionToolbar->setSelectionBrush(selBrush);
+            } else {
+                qWarning("MainWindow::setCurrentTool: Could not obtain SelectionBrush for SelectionToolbar setup when toolType is Selection.");
+                selectionToolbar->setSelectionBrush(nullptr); 
+            }
+        } else {
+            selectionToolbar->setVisible(false);
+            selectionToolbar->setSelectionBrush(nullptr); 
+        }
+    }
+
+    if (mainToolBar) { 
+        mainToolBar->updateToolActions(toolType); 
+    }
+
+    // Update currentBrushLabel in status bar
+    if (currentBrushLabel) {
+        if (newBrush) {
+            currentBrushLabel->setText(tr("Brush: %1").arg(newBrush->getName()));
+        } else {
+            currentBrushLabel->setText(tr("Brush: None"));
+        }
+    }
 }
 void MainWindow::increaseBrushSize() {
     // Based on `Source/gui.cpp::IncreaseBrushSize` logic.

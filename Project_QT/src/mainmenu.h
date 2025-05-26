@@ -183,8 +183,22 @@ private:
     QMenu* viewMenu;
     QMenu* mapMenu;
     QMenu* toolsMenu;
-    QMenu* windowMenu; // Original also had "Window" menu for docks/minimap
+    // QMenu* windowMenu; // Will be re-declared for clarity if needed, or used directly.
     QMenu* helpMenu;
+
+    // New Menu Declarations
+    QMenu* searchMenu;
+    QMenu* selectionMenu;
+    QMenu* navigateMenu;
+    QMenu* windowMenu; // Re-affirming for clarity, or create if not yet used.
+    QMenu* experimentalMenu;
+
+    // Submenus for new main menus
+    QMenu* findOnSelectionSubMenu;
+    QMenu* selectionModeSubMenu;
+    QMenu* paletteSubMenu;    // For Window->Palette
+    QMenu* toolbarsSubMenu;   // For Window->Toolbars
+
     QMenu* recentFilesMenu; // Submenu for recent files
     QMenu* importSubMenu;   // For File->Import
     QMenu* exportSubMenu;   // For File->Export
@@ -257,6 +271,59 @@ private:
     QAction* tilesetEditorAction;
     // QAction* selectionToDoodadAction; // Slot exists, QAction member might not be needed unless state changes
 
+    // Search Menu Actions
+    QAction* findZonesAction;
+    QAction* findUniqueAction;
+    QAction* findActionIdAction; // Renamed from findAction to avoid conflict with QWidget::actions()
+    QAction* findContainerAction;
+    QAction* findWriteableAction;
+    QAction* findEverythingAction;
+
+    // Selection Menu Actions
+    QAction* replaceOnSelectionAction;
+    QAction* findItemOnSelectionAction;
+    QAction* removeItemOnSelectionAction;
+    // Find on Selection Submenu Actions
+    QAction* findEverythingOnSelectionAction;
+    QAction* findZonesOnSelectionAction;
+    QAction* findUniqueOnSelectionAction;
+    QAction* findActionIdOnSelectionAction;
+    QAction* findContainerOnSelectionAction;
+    QAction* findWriteableOnSelectionAction;
+    // Selection Mode Submenu Actions (radio group)
+    QAction* selectModeCompensateAction;
+    QAction* selectModeCurrentAction;
+    QAction* selectModeLowerAction;
+    QAction* selectModeVisibleAction;
+    QActionGroup* selectionModeGroup;
+
+
+    // Navigate Menu Actions
+    QAction* gotoPreviousPositionAction;
+    // Jump to Brush/Item already exist
+
+    // Window Menu Actions
+    QAction* showMinimapAction;
+    QAction* newPaletteAction;
+    // Palette Submenu Actions (radio group)
+    QAction* selectTerrainPaletteAction;
+    QAction* selectDoodadPaletteAction;
+    QAction* selectItemBackgroundPaletteAction; // Renamed from selectItemPalette to avoid conflict
+    QAction* selectCollectionPaletteAction;
+    QAction* selectHousePaletteAction;
+    QAction* selectCreaturePaletteAction;
+    QAction* selectWaypointPaletteAction;
+    QAction* selectRawPaletteAction;
+    QActionGroup* paletteSelectionGroup;
+    // Toolbars Submenu Actions (checkable)
+    QAction* viewBrushesToolbarAction;
+    QAction* viewPositionToolbarAction;
+    QAction* viewSizesToolbarAction;
+    QAction* viewStandardToolbarAction;
+
+    // Experimental Menu Actions
+    QAction* experimentalFogAction;
+
 
     // Map to quickly look up actions by ID if the original system uses specific integer IDs
     // QMap<int, QAction*> actionMap; // Not strictly needed if all actions connected manually
@@ -269,6 +336,12 @@ private:
     void createToolsMenu();
     void createNetworkMenu(); // New, consolidates live editor stuff
     void createHelpMenu();
+    // New menu creation methods
+    void createSearchMenu();
+    void createSelectionMenu();
+    void createNavigateMenu();
+    void createWindowMenu();
+    void createExperimentalMenu();
     // Helper to add recent file entries dynamically
     void updateRecentFilesMenu();
     

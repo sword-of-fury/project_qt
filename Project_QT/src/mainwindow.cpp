@@ -63,7 +63,8 @@ MainWindow::MainWindow(QWidget *parent) :
     borderSystem = currentMap->getBorderSystem();
 
     // Setup UI components and main window layout.
-    setupUi();
+    setupUi(); // SpriteManager test will be temporarily inside setupUi
+
     createDockWindows(); // Set up dockable panels.
     createStatusBar(); // Configure status bar.
     
@@ -154,16 +155,77 @@ void MainWindow::setupUi()
     addToolBar(Qt::BottomToolBarArea, selectionToolbar); // Add selection toolbar.
     selectionToolbar->setVisible(false); // Hidden by default, shown when selection tool active.
     
-    // Initialize common Managers
-    // Need to load actual sprites and data first!
-    // These calls usually done in `Application::OnInit` in the original project.
-    // Here we'll ensure basic managers are loaded.
-    ItemManager::getInstance().loadItems("data/items.json"); // Example, needs actual path/format
-    ItemManager::getInstance().loadSprites("data/sprites"); // Example
-    CreatureManager::getInstance().loadCreatures("data/creatures.xml"); // Example
+    // Initialize common Managers and load data
+    qDebug() << "--- Initializing Managers and Loading Data ---";
+
+    // Connect error signals for debugging
+    connect(&ItemManager::getInstance(), &ItemManager::error, [](const QString& message){
+        qWarning() << "ItemManager Error:" << message;
+    });
+    connect(&SpriteManager::getInstance(), &SpriteManager::error, [](const QString& message){
+        qWarning() << "SpriteManager Error:" << message;
+    });
+    // Assuming CreatureManager might also have an error signal if file parsing fails
+    // connect(&CreatureManager::getInstance(), &CreatureManager::error, ...);
+
+
+    // Load Tibia.dat for item properties and Tibia.spr for sprites
+    QString datPath = "data/Tibia.dat";
+    QString sprPath = "data/Tibia.spr";
+    QString creaturesXmlPath = "data/creatures.xml";
+    QString testMapPath = "data/testmap.otbm"; // Placeholder for a simple test map
+
+    qDebug() << "Loading item properties from:" << datPath;
+    if (!ItemManager::getInstance().loadTibiaDat(datPath)) {
+        qWarning() << "Failed to load Tibia.dat from" << datPath;
+    } else {
+        qDebug() << "Tibia.dat loaded successfully.";
+    }
+
+    qDebug() << "Loading sprites from:" << sprPath << "and using DAT:" << datPath;
+    if (!SpriteManager::getInstance()->loadSprites(sprPath, datPath)) {
+        qWarning() << "Failed to load Tibia.spr from" << sprPath;
+    } else {
+        qDebug() << "Tibia.spr loaded successfully. Item Sprites Max ID:" << SpriteManager::getInstance()->getItemSpriteMaxID();
+    }
+    
+    qDebug() << "Loading creatures from:" << creaturesXmlPath;
+    if (!CreatureManager::getInstance().loadCreatures(creaturesXmlPath)) {
+        qWarning() << "Failed to load creatures.xml from" << creaturesXmlPath;
+    } else {
+        qDebug() << "creatures.xml loaded successfully.";
+    }
+
+    // Load the test map or create a dummy map
+    qDebug() << "Attempting to load map from:" << testMapPath;
+    bool mapLoaded = currentMap->loadFromFile(testMapPath);
+    if (!mapLoaded) {
+        qWarning() << "Failed to load" << testMapPath << "! Creating a dummy map.";
+        currentMap->clear(); // Ensure map is empty before creating dummy
+        currentMap->setSize(QSize(20, 15)); // Example: 20x15 map
+        
+        // Attempt to get a ground item (e.g., ID 100, common grass or dirt)
+        // This requires ItemManager to have loaded items from Tibia.dat successfully.
+        const Item* groundItem = ItemManager::getInstance().getItemById(100); 
+        if (groundItem) {
+            qDebug() << "Using item ID 100 as ground tile for dummy map.";
+            for (int x = 0; x < 20; ++x) {
+                for (int y = 0; y < 15; ++y) {
+                    // addItem in Map takes a const Item&.
+                    currentMap->addItem(x, y, Layer::Type::Ground, *groundItem);
+                }
+            }
+        } else {
+            qWarning() << "Could not find item ID 100 to use as ground for dummy map. Dummy map will be empty.";
+        }
+        currentMap->setName("Dummy Map");
+    } else {
+        qDebug() << testMapPath << "loaded successfully.";
+    }
+    
+    qDebug() << "--- Finished Initializing Managers and Loading Data ---";
 
     // Link brushes with mapview and map instance after creation.
-    // Brushes are usually managed by BrushManager singleton, so get and pass.
     mapView->setMap(currentMap); // Ensure MapView has the correct map instance.
 
     // Link selection toolbar with brush (after `mainToolBar` init in `createToolBar` not `setupUi`)
@@ -173,6 +235,8 @@ void MainWindow::setupUi()
         // You also need to provide selectionToolbar with `MapView` access for coordinate transformations
         selectionToolbar->setMapView(mapView); // Let selectionToolbar control mapview/map based on selection.
     }
+    // Ensure MapView has the map set AFTER map is loaded/created
+    mapView->setMap(currentMap);
 }
 
 void MainWindow::createDockWindows()

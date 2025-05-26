@@ -11,9 +11,8 @@ CreatureManager::CreatureManager(QObject* parent)
 
 CreatureManager::~CreatureManager()
 {
-    // TODO: Clean up creature data
-    qDeleteAll(creatures);
-    creatures.clear();
+    // m_creatureProperties stores objects directly, so no need for qDeleteAll
+    m_creatureProperties.clear();
 }
 
 CreatureManager& CreatureManager::getInstance()
@@ -33,8 +32,9 @@ bool CreatureManager::loadCreatures(const QString& filePath)
     }
 
     // Clear existing creatures before loading
-    qDeleteAll(creatures);
-    creatures.clear();
+    // qDeleteAll(creatures); // Old map
+    // creatures.clear(); // Old map
+    m_creatureProperties.clear(); // Clear the new map
 
     QXmlStreamReader xml(&file);
 
@@ -47,17 +47,47 @@ bool CreatureManager::loadCreatures(const QString& filePath)
             if (xml.name() == "creatures") {
                 continue;
             }
-            if (xml.name() == "creature") {
-                int id = xml.attributes().value("id").toInt();
-                QString name = xml.attributes().value("name").toString();
-                int spriteId = xml.attributes().value("spriteId").toInt();
+            if (xml.name() == "creature" || xml.name() == "monster" || xml.name() == "npc") {
+                CreatureProperties props;
+                props.id = xml.attributes().value("id").toInt(); // Assuming 'id' attribute exists for all types
+                props.name = xml.attributes().value("name").toString();
+                props.isNpc = (xml.name() == "npc") || xml.attributes().value("is_npc").toString().compare("true", Qt::CaseInsensitive) == 0;
 
-                if (id > 0 && !name.isEmpty() && spriteId > 0) {
-                    Creature* creature = new Creature(id, name, spriteId);
-                    creatures.insert(id, creature);
-                    qDebug() << "Loaded creature:" << name << "(ID:" << id << ", SpriteID:" << spriteId << ")";
+                // Outfit details
+                props.outfit.lookType = xml.attributes().value("looktype").toInt();
+                props.outfit.lookHead = xml.attributes().value("lookhead").toInt();
+                props.outfit.lookBody = xml.attributes().value("lookbody").toInt();
+                props.outfit.lookLegs = xml.attributes().value("looklegs").toInt();
+                props.outfit.lookFeet = xml.attributes().value("lookfeet").toInt();
+                props.outfit.lookAddons = xml.attributes().value("lookaddons").toInt();
+                props.outfit.lookItem = xml.attributes().value("lookitem").toInt();    
+                props.outfit.lookMount = xml.attributes().value("lookmount").toInt();  
+
+                // Mount outfit components (if present in XML)
+                props.outfit.lookMountHead = xml.attributes().value("lookmounthead").toInt();
+                props.outfit.lookMountBody = xml.attributes().value("lookmountbody").toInt();
+                props.outfit.lookMountLegs = xml.attributes().value("lookmountlegs").toInt();
+                props.outfit.lookMountFeet = xml.attributes().value("lookmountfeet").toInt();
+
+                // Health and Speed
+                props.maxHealth = xml.attributes().value("health_max").toInt(100); // Default to 100 if not present
+                props.speed = xml.attributes().value("speed").toInt(100);         // Default to 100 if not present
+                
+                // If ID is not in XML, generate or use name as key (requires map type change)
+                // For this subtask, we assume 'id' attribute is present and valid.
+                if (props.id == 0 && !props.name.isEmpty()) { // Fallback if ID is missing but name exists
+                    // This would require m_creatureProperties to be QMap<QString, CreatureProperties>
+                    // or a different handling strategy. For now, we stick to int IDs.
+                    // Consider logging a warning if ID is missing.
+                    qWarning() << "Creature type" << props.name << "is missing a numeric ID in XML. Skipping.";
+                    continue;
+                }
+
+                if (props.id > 0 && !props.name.isEmpty()) {
+                    m_creatureProperties.insert(props.id, props);
+                    qDebug() << "Loaded creature type:" << props.name << "(ID:" << props.id << ")";
                 } else {
-                    qWarning() << "Skipping creature with invalid data: ID=" << id << ", Name=" << name << ", SpriteID=" << spriteId;
+                    qWarning() << "Skipping creature type with invalid data: ID=" << props.id << ", Name=" << props.name;
                 }
             }
         }
@@ -69,19 +99,38 @@ bool CreatureManager::loadCreatures(const QString& filePath)
     }
 
     file.close();
-    qDebug() << "Finished loading" << creatures.size() << "creatures.";
+    qDebug() << "Finished loading" << m_creatureProperties.size() << "creature types.";
+    emit creaturesLoaded(); // Emit the signal after loading
     return true;
 }
 
-Creature* CreatureManager::getCreatureById(int id) const
-{
-    if (creatures.contains(id)) {
-        return creatures.value(id);
+const CreatureManager::CreatureProperties* CreatureManager::getCreatureProperties(int id) const {
+    if (m_creatureProperties.contains(id)) {
+        return &m_creatureProperties.value(id); // Return pointer to value in QMap
     }
     return nullptr;
 }
 
-QList<Creature*> CreatureManager::getAllCreatures() const
-{
-    return creatures.values();
+QList<CreatureManager::CreatureProperties> CreatureManager::getAllCreatureProperties() const {
+    return m_creatureProperties.values();
 }
+
+const CreatureManager::CreatureProperties* CreatureManager::getCreaturePropertiesByName(const QString& name) const {
+    for (const auto& props : m_creatureProperties) { // Iterate over QMap values
+        if (props.name.compare(name, Qt::CaseInsensitive) == 0) {
+            return &props; // Return pointer to the value (CreatureProperties)
+        }
+    }
+    return nullptr;
+}
+
+// Creature* CreatureManager::getCreatureById(int id) const
+// {
+//     Q_UNUSED(id); 
+//     return nullptr; 
+// }
+
+// QList<Creature*> CreatureManager::getAllCreatures() const
+// {
+//     return QList<Creature*>(); 
+// }

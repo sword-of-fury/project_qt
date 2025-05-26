@@ -102,6 +102,65 @@ public:
 
     void loadSprDatFiles(); // New method for loading SPR/DAT files
 
+    // New public methods for actions from MainMenu
+    void generateMap();
+    void closeMap();
+    void importMapFile();
+    void importMonsters();
+    void exportTilesets();
+    void reloadData();
+    void replaceItems();
+    void refreshItems();
+    // toggleBorderSystem(bool) already exists
+    void borderizeSelection();
+    void borderizeMap();
+    void randomizeSelection();
+    void randomizeMap();
+    void mapRemoveUnreachable(); // Corresponds to onMapRemoveUnreachable
+    void clearInvalidHouses();   // Corresponds to onClearHouseTiles
+    void clearMapModifiedState(); // Corresponds to onClearModifiedState
+
+    // New public methods for View menu actions
+    void newView(); // Placeholder for MainMenu::onNewView
+    void newDetachedView(); // Placeholder for MainMenu::onNewDetachedView
+    void takeScreenshot();
+    void toggleShowAllFloors(bool checked);
+    void toggleShowAsMinimap(bool checked);
+    void toggleShowOnlyColors(bool checked);
+    void toggleShowOnlyModified(bool checked);
+    void toggleAlwaysShowZones(bool checked);
+    void toggleExtendedHouseShader(bool checked);
+    void toggleShowTooltips(bool checked);
+    void toggleShowClientBox(bool checked);
+    void toggleGhostItems(bool checked);
+    void toggleGhostHigherFloors(bool checked);
+    void toggleShowShade(bool checked);
+    void toggleShowAnimation(bool checked);
+    void toggleShowLight(bool checked);
+    void toggleShowLightStrength(bool checked);
+    void toggleShowTechnicalItems(bool checked);
+    void toggleShowZones(bool checked);
+    void toggleShowCreatures(bool checked);
+    void toggleShowSpawns(bool checked);
+    void toggleShowSpecialTiles(bool checked);
+    void toggleShowHouses(bool checked);
+    void toggleShowPathing(bool checked);
+    void toggleShowTowns(bool checked);
+    void toggleShowWaypoints(bool checked);
+    void toggleHighlightItems(bool checked);
+    void toggleHighlightLockedDoors(bool checked);
+    void toggleShowWallHooks(bool checked);
+
+    // New public methods for Map menu actions
+    void mapValidateGround();
+
+    // New public methods for Tools menu actions
+    void openTilesetEditor();
+    void selectionToDoodad();
+    // void generateIsland(); // Already exists via onGenerateIsland in MainMenu, connected to MainWindow::generateIsland
+    // void createBorder(); // Already exists via onCreateBorder in MainMenu, connected to MainWindow::createBorder (placeholder)
+
+
 public slots: // Slots connected to various UI signals or map signals
     // General UI updates
     void updateWindowTitle();

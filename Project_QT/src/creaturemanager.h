@@ -5,10 +5,22 @@
 #include <QMap>
 #include <QString>
 #include <QList>
-#include "creature.h"
+#include "creature.h" // For Creature class itself if needed, though manager deals with properties primarily
+#include "outfit.h"   // For the Outfit struct
 
-// Forward declaration for Creature class (assuming it will be created)
-// class Creature;
+// Definition for CreatureProperties
+struct CreatureProperties {
+    int id;            // Creature Type ID (e.g., from XML attribute)
+    QString name;
+    Outfit outfit;
+    bool isNpc;
+    // Base stats - specific instances might have current values differing from these
+    int maxHealth;
+    int speed;
+    // Add any other static properties that define a creature type
+    // e.g., mana, skills, resistances, if CreatureManager is to handle these.
+    // For now, keep it aligned with what Creature class itself stores as potential type-level info.
+};
 
 class CreatureManager : public QObject
 {
@@ -24,22 +36,19 @@ public:
     // TODO: Implement loading creatures from a data file (e.g., XML, custom format)
     bool loadCreatures(const QString& filePath);
 
-    // TODO: Implement methods to get creature data by ID or name
-    Creature* getCreatureById(int id) const;
-    // Creature* getCreatureByName(const QString& name) const;
-
-    // TODO: Implement a method to get a list of all creatures for populating UI
-    QList<Creature*> getAllCreatures() const;
+    const CreatureProperties* getCreatureProperties(int id) const;
+    QList<CreatureProperties> getAllCreatureProperties() const;
+    const CreatureProperties* getCreaturePropertiesByName(const QString& name) const;
 
 signals:
-    // TODO: Add signals if needed, e.g., creaturesLoaded()
+    void creaturesLoaded();
 
 private:
     explicit CreatureManager(QObject* parent = nullptr);
     ~CreatureManager();
 
-    // TODO: Store creature data
-    QMap<int, Creature*> creatures;
+    // Store creature properties
+    QMap<int, CreatureProperties> m_creatureProperties;
 };
 
 #endif // CREATUREMANAGER_H

@@ -55,10 +55,18 @@ private slots:
     void onOpenRecent(); // Submenu handler for recent files
     void onSaveMap();
     void onSaveMapAs();
-    void onImportMap();
-    void onExportMap();
+    // void onImportMap(); // Will be specific, e.g., onImportMapFile
+    // void onExportMap(); // Will be specific, e.g., onExportMinimap
     void onExit();
     void onPreferences(); // Opens preferences dialog
+
+    // New File Menu Slots
+    void onGenerateMap();
+    void onCloseMap();
+    void onImportMapFile(); // For "Import Map..."
+    void onImportMonsters(); // For "Import Monsters/NPC..."
+    void onExportTilesets();
+    void onReloadData();
     
     // Edit Menu Slots
     void onUndo();
@@ -79,6 +87,37 @@ private slots:
     void onToggleStatusBar();
     void onToggleToolbar();
     void onToggleFullscreen(); // From Source/main_menubar.h
+    // New View Menu Slots (consolidating Editor, View, Show from XML)
+    void onNewView();
+    void onNewDetachedView();
+    void onTakeScreenshot();
+    void onToggleShowAllFloors();
+    void onToggleShowAsMinimap();
+    void onToggleShowOnlyColors();
+    void onToggleShowOnlyModified();
+    void onToggleAlwaysShowZones();
+    void onToggleExtendedHouseShader();
+    void onToggleShowTooltips();
+    void onToggleShowClientBox();
+    void onToggleGhostItems();
+    void onToggleGhostHigherFloors();
+    void onToggleShowShade();
+    void onToggleShowAnimation();
+    void onToggleShowLight();
+    void onToggleShowLightStrength();
+    void onToggleShowTechnicalItems();
+    void onToggleShowZones();
+    void onToggleShowCreatures();
+    void onToggleShowSpawns();
+    void onToggleShowSpecialTiles();
+    void onToggleShowHouses();
+    void onToggleShowPathing();
+    void onToggleShowTowns();
+    void onToggleShowWaypoints();
+    void onToggleHighlightItems();
+    void onToggleHighlightLockedDoors();
+    void onToggleShowWallHooks();
+
 
     // Map Menu Slots
     void onMapProperties();
@@ -99,8 +138,19 @@ private slots:
     void onMapCleanup(); // Generic map cleanup dialog (from main_menubar)
     void onMapRemoveDuplicates(); // Removes duplicate items on map
     void onMapValidateGround(); // Validates ground layers
-    void onGenerateIsland(); // Island Generator dialog
+    // void onGenerateIsland(); // Island Generator dialog - This seems to be MAP_GENERATE_ISLAND, not GENERATE_MAP
     void onCreateBorder(); // Open Border Editor
+
+    // New Edit Menu Slots
+    void onReplaceItems();
+    void onRefreshItems();
+    void onToggleBorderAutomagic(); // For "Border Automagic"
+    void onBorderizeSelection();
+    void onBorderizeMap();
+    void onRandomizeSelection();
+    void onRandomizeMap();
+    // onMapRemoveUnreachable, onClearHouseTiles, onClearModifiedState are already present
+
 
     // Tools Menu Slots
     void onBrushTool();
@@ -110,7 +160,8 @@ private slots:
     void onJumpToBrush(); // Jump to a specific brush by name/ID
     void onJumpToItemBrush(); // Jump to a specific item brush (RAW)
     void onSelectionToDoodad(); // Convert selection to a doodad brush
-    void onGenerateMap(); // Original Generate Map option
+    // void onGenerateMap(); // This slot is for File->Generate Map. Tools->Island Generator is onGenerateIsland.
+    void onTilesetEditor(); // Slot for Tools->Tileset Editor
 
     // Network/Live Menu Slots
     void onStartLive(); // Host server
@@ -135,10 +186,77 @@ private:
     QMenu* windowMenu; // Original also had "Window" menu for docks/minimap
     QMenu* helpMenu;
     QMenu* recentFilesMenu; // Submenu for recent files
+    QMenu* importSubMenu;   // For File->Import
+    QMenu* exportSubMenu;   // For File->Export
+    QMenu* reloadSubMenu;   // For File->Reload
+    QMenu* borderOptionsSubMenu; // For Edit->Border Options
+    QMenu* otherOptionsSubMenu;  // For Edit->Other Options
+
 
     enum { MaxRecentFiles = 10 }; // Max number of recent files to display
     QList<QAction*> recentFileActions; // List of QActions for recent files
     QAction* separatorAction; // Separator between recent files and "Exit"
+
+    // QAction members for new items
+    // File Menu
+    QAction* generateMapAction;
+    QAction* closeMapAction;
+    QAction* importMapAction;      // "Import Map..."
+    QAction* importMonstersAction; // "Import Monsters/NPC..."
+    QAction* exportTilesetsAction;
+    QAction* reloadDataAction;
+
+    // Edit Menu
+    QAction* replaceItemsAction;
+    QAction* refreshItemsAction;
+    QAction* automagicAction;          // "Border Automagic" (checkable)
+    QAction* borderizeSelectionAction;
+    QAction* borderizeMapAction;
+    QAction* randomizeSelectionAction;
+    QAction* randomizeMapAction;
+    // Actions for "Other Options" submenu (already have slots, ensure QAction members if needed for state updates)
+    QAction* removeUnreachableTilesAction; // For MAP_REMOVE_UNREACHABLE_TILES
+    QAction* clearInvalidHousesAction;     // Slot onClearHouseTiles exists
+    QAction* clearModifiedStateAction;   // Slot onClearModifiedState exists
+
+    // View Menu Actions (consolidated)
+    QAction* newViewAction;
+    QAction* newDetachedViewAction;
+    QAction* takeScreenshotAction;
+    QAction* showAllFloorsAction;
+    QAction* showAsMinimapAction;
+    QAction* showOnlyColorsAction;
+    QAction* showOnlyModifiedAction;
+    QAction* alwaysShowZonesAction;
+    QAction* extendedHouseShaderAction;
+    QAction* showTooltipsAction;
+    QAction* showClientBoxAction;
+    QAction* ghostItemsAction;
+    QAction* ghostHigherFloorsAction;
+    QAction* showShadeAction;
+    QAction* showAnimationAction;
+    QAction* showLightAction;
+    QAction* showLightStrengthAction;
+    QAction* showTechnicalItemsAction;
+    QAction* showZonesAction;
+    QAction* showCreaturesAction;
+    QAction* showSpawnsAction;
+    QAction* showSpecialTilesAction;
+    QAction* showHousesAction;
+    QAction* showPathingAction;
+    QAction* showTownsAction;
+    QAction* showWaypointsAction;
+    QAction* highlightItemsAction;
+    QAction* highlightLockedDoorsAction;
+    QAction* showWallHooksAction;
+
+    // Map Menu Actions (if needing explicit members for dynamic updates beyond slots)
+    // QAction* validateGroundAction; // Example if needed
+
+    // Tools Menu Actions
+    QAction* tilesetEditorAction;
+    // QAction* selectionToDoodadAction; // Slot exists, QAction member might not be needed unless state changes
+
 
     // Map to quickly look up actions by ID if the original system uses specific integer IDs
     // QMap<int, QAction*> actionMap; // Not strictly needed if all actions connected manually

@@ -58,183 +58,237 @@ QAction* MainMenu::createAndAddAction(QMenu* menu, const QString& text, QObject*
 void MainMenu::createFileMenu()
 {
     // New, Open, Save, Save As
-    createAndAddAction(fileMenu, tr("&New Map"), this, SLOT(onNewMap()), QKeySequence::New);
-    createAndAddAction(fileMenu, tr("&Open Map..."), this, SLOT(onOpenMap()), QKeySequence::Open);
+    createAndAddAction(fileMenu, tr("&New Map"), this, SLOT(onNewMap()), QKeySequence("P")); // Hotkey from XML
+    createAndAddAction(fileMenu, tr("&Open Map..."), this, SLOT(onOpenMap()), QKeySequence::Open); // Ctrl+O
+    createAndAddAction(fileMenu, tr("&Save Map"), this, SLOT(onSaveMap()), QKeySequence::Save); // Ctrl+S
+    createAndAddAction(fileMenu, tr("Save Map &As..."), this, SLOT(onSaveMapAs()), QKeySequence("Ctrl+Alt+S")); // Hotkey from XML
+    generateMapAction = createAndAddAction(fileMenu, tr("&Generate Map"), this, SLOT(onGenerateMap()), QKeySequence("Ctrl+Shift+G"));
+    closeMapAction = createAndAddAction(fileMenu, tr("&Close"), this, SLOT(onCloseMap()), QKeySequence("Shift+B"));
+    
+    fileMenu->addSeparator();
+
+    // Import Submenu
+    importSubMenu = fileMenu->addMenu(tr("&Import"));
+    importMapAction = createAndAddAction(importSubMenu, tr("Import Map..."), this, SLOT(onImportMapFile()));
+    importMonstersAction = createAndAddAction(importSubMenu, tr("Import Monsters/NPC..."), this, SLOT(onImportMonsters()));
+
+    // Export Submenu
+    exportSubMenu = fileMenu->addMenu(tr("&Export"));
+    createAndAddAction(exportSubMenu, tr("Export Minimap..."), this, SLOT(onExportMinimap())); // Assuming onExportMinimap exists
+    exportTilesetsAction = createAndAddAction(exportSubMenu, tr("Export Tilesets..."), this, SLOT(onExportTilesets()));
+
+    // Reload Submenu
+    reloadSubMenu = fileMenu->addMenu(tr("&Reload"));
+    reloadDataAction = createAndAddAction(reloadSubMenu, tr("Reload Data"), this, SLOT(onReloadData()), QKeySequence(Qt::Key_F5));
+    
+    fileMenu->addSeparator();
 
     // Recent Files Submenu
     recentFilesMenu = new QMenu(tr("Open Recent"), this);
     fileMenu->addMenu(recentFilesMenu);
-    
-    // Actions for recent files
     for (int i = 0; i < MaxRecentFiles; ++i) {
-        recentFileActions.append(new QAction(this)); // Actions created without text yet
-        recentFileActions.last()->setVisible(false); // Hide initially
+        recentFileActions.append(new QAction(this));
+        recentFileActions.last()->setVisible(false);
         connect(recentFileActions.last(), &QAction::triggered, this, &MainMenu::onOpenRecent);
         recentFilesMenu->addAction(recentFileActions.last());
     }
-    separatorAction = fileMenu->addSeparator(); // Separator for recent files list.
-    updateRecentFilesMenu(); // Initial update of recent files.
-
-    createAndAddAction(fileMenu, tr("&Save Map"), this, SLOT(onSaveMap()), QKeySequence::Save);
-    createAndAddAction(fileMenu, tr("Save Map &As..."), this, SLOT(onSaveMapAs()), QKeySequence::SaveAs);
-    
-    fileMenu->addSeparator();
-    
-    // Import/Export Submenus (from Source/src/main_menubar.cpp)
-    QMenu* importMenu = fileMenu->addMenu(tr("&Import"));
-    createAndAddAction(importMenu, tr("Import Map..."), this, SLOT(onImportMap()));
-    createAndAddAction(importMenu, tr("Import Monster Data (XML)..."), this, SLOT(onImportMonsterData()));
-    createAndAddAction(importMenu, tr("Import Minimap..."), this, SLOT(onImportMinimap()));
-
-    QMenu* exportMenu = fileMenu->addMenu(tr("&Export"));
-    createAndaddaction(exportMenu, tr("Export Minimap..."), this, SLOT(onExportMinimap()));
-    createAndaddaction(exportMenu, tr("Export Tilesets..."), this, SLOT(onExportTilesets()));
-    
-    fileMenu->addSeparator();
+    separatorAction = recentFilesMenu->addSeparator(); // Separator within recent files menu if needed, or place in fileMenu
+    fileMenu->insertMenu(separatorAction, recentFilesMenu); // Insert recent files menu before the separator leading to Preferences
+    updateRecentFilesMenu();
 
     // Preferences & Exit
-    createAndAddAction(fileMenu, tr("&Preferences..."), this, SLOT(onPreferences()), QKeySequence::Preferences);
+    createAndAddAction(fileMenu, tr("&Preferences..."), this, SLOT(onPreferences()), QKeySequence("Ctrl+Shift+V"));
     createAndAddAction(fileMenu, tr("E&xit"), this, SLOT(onExit()), QKeySequence::Quit);
 
-    // Load SPR/DAT
+    // Load SPR/DAT (existing custom action, keep if needed, or integrate into Reload)
     createAndAddAction(fileMenu, tr("Load SPR/DAT..."), this, SLOT(onLoadSprDat()));
 }
 
 void MainMenu::createEditMenu()
 {
-    // Undo/Redo (enabled/disabled dynamically)
-    createAndAddAction(editMenu, tr("&Undo"), this, SLOT(onUndo()), QKeySequence::Undo);
-    createAndAddAction(editMenu, tr("&Redo"), this, SLOT(onRedo()), QKeySequence::Redo);
+    // Undo/Redo
+    createAndAddAction(editMenu, tr("&Undo"), this, SLOT(onUndo()), QKeySequence::Undo); // Ctrl+Z
+    createAndAddAction(editMenu, tr("&Redo"), this, SLOT(onRedo()), QKeySequence("Ctrl+Shift+Z")); // Hotkey from XML
     editMenu->addSeparator();
 
-    // Cut/Copy/Paste/Delete (enabled/disabled dynamically by selection state)
-    createAndAddAction(editMenu, tr("Cu&t"), this, SLOT(onCut()), QKeySequence::Cut);
-    createAndAddAction(editMenu, tr("&Copy"), this, SLOT(onCopy()), QKeySequence::Copy);
-    createAndAddAction(editMenu, tr("&Paste"), this, SLOT(onPaste()), QKeySequence::Paste);
-    createAndAddAction(editMenu, tr("&Delete"), this, SLOT(onDelete()), QKeySequence::Delete);
+    // Replace / Refresh
+    replaceItemsAction = createAndAddAction(editMenu, tr("&Replace Items..."), this, SLOT(onReplaceItems()), QKeySequence("Ctrl+Shift+F"));
+    refreshItemsAction = createAndAddAction(editMenu, tr("Refresh Items"), this, SLOT(onRefreshItems()));
+    editMenu->addSeparator();
+
+    // Border Options Submenu
+    borderOptionsSubMenu = editMenu->addMenu(tr("Border Options"));
+    automagicAction = createAndAddAction(borderOptionsSubMenu, tr("Border Automagic"), this, SLOT(onToggleBorderAutomagic()), QKeySequence(Qt::Key_A));
+    automagicAction->setCheckable(true); // This is a toggle
+    borderOptionsSubMenu->addSeparator();
+    borderizeSelectionAction = createAndAddAction(borderOptionsSubMenu, tr("Borderize Selection"), this, SLOT(onBorderizeSelection()), QKeySequence("Ctrl+B"));
+    borderizeMapAction = createAndAddAction(borderOptionsSubMenu, tr("Borderize Map"), this, SLOT(onBorderizeMap()));
+    randomizeSelectionAction = createAndAddAction(borderOptionsSubMenu, tr("Randomize Selection"), this, SLOT(onRandomizeSelection()));
+    randomizeMapAction = createAndAddAction(borderOptionsSubMenu, tr("Randomize Map"), this, SLOT(onRandomizeMap()));
+
+    // Other Options Submenu
+    otherOptionsSubMenu = editMenu->addMenu(tr("Other Options"));
+    removeUnreachableTilesAction = createAndAddAction(otherOptionsSubMenu, tr("Remove all Unreachable Tiles..."), this, SLOT(onMapRemoveUnreachable())); // Slot exists
+    clearInvalidHousesAction = createAndAddAction(otherOptionsSubMenu, tr("Clear Invalid Houses"), this, SLOT(onClearHouseTiles()));       // Slot exists
+    clearModifiedStateAction = createAndAddAction(otherOptionsSubMenu, tr("Clear Modified State"), this, SLOT(onClearModifiedState()));     // Slot exists
+    
+    editMenu->addSeparator();
+    
+    // Cut/Copy/Paste (Delete is often separate or handled by context)
+    createAndAddAction(editMenu, tr("Cu&t"), this, SLOT(onCut()), QKeySequence::Cut); // Ctrl+X
+    createAndAddAction(editMenu, tr("&Copy"), this, SLOT(onCopy()), QKeySequence::Copy); // Ctrl+C
+    createAndAddAction(editMenu, tr("&Paste"), this, SLOT(onPaste()), QKeySequence::Paste); // Ctrl+V
+    
+    // Delete action is usually context-dependent or has its own key (Del).
+    // It's in the original Edit menu, so we keep it.
+    createAndAddAction(editMenu, tr("&Delete"), this, SLOT(onDelete()), QKeySequence::Delete); 
     editMenu->addSeparator();
 
     // Selection commands
     createAndAddAction(editMenu, tr("Select &All"), this, SLOT(onSelectAll()), QKeySequence::SelectAll);
-    createAndAddAction(editMenu, tr("&Deselect All"), this, SLOT(onDeselectAll())); // No default shortcut in Qt, use specific ID later if needed.
-    
-    editMenu->addSeparator();
-
-    // Search/Replace/Cleanup (from Source/src/main_menubar.cpp)
-    createAndAddAction(editMenu, tr("Search for &Item..."), this, SLOT(onFindItem()));
-    createAndAddAction(editMenu, tr("Search for &Creature..."), this, SLOT(onFindCreature()));
-    createAndAddAction(editMenu, tr("Find &Similar Items..."), this, SLOT(onFindSimilarItems()));
-    createAndAddAction(editMenu, tr("&Replace Items..."), this, SLOT(onReplaceItems()));
-    createAndAddAction(editMenu, tr("Map &Cleanup..."), this, SLOT(onMapCleanup()));
-    editMenu->addSeparator();
-
-    // Various edit actions (from Source/src/main_menubar.cpp)
-    createAndAddAction(editMenu, tr("Clear Invalid House &Tiles..."), this, SLOT(onClearHouseTiles()));
-    createAndAddAction(editMenu, tr("Clear &Modified State"), this, SLOT(onClearModifiedState()));
-    createAndAddAction(editMenu, tr("Jump to &Brush..."), this, SLOT(onJumpToBrush()));
-    createAndAddAction(editMenu, tr("Jump to &Item Brush..."), this, SLOT(onJumpToItemBrush()));
+    createAndAddAction(editMenu, tr("&Deselect All"), this, SLOT(onDeselectAll()));
 }
 
 void MainMenu::createViewMenu()
 {
-    // Zoom controls
-    createAndAddAction(viewMenu, tr("Zoom &In"), this, SLOT(onZoomIn()), QKeySequence::ZoomIn);
-    createAndAddAction(viewMenu, tr("Zoom &Out"), this, SLOT(onZoomOut()), QKeySequence::ZoomOut);
-    createAndAddAction(viewMenu, tr("Zoom &Normal"), this, SLOT(onZoomReset()));
+    // Items from "Editor" menu in XML
+    newViewAction = createAndAddAction(viewMenu, tr("New View"), this, SLOT(onNewView()), QKeySequence("Ctrl+Shift+N"));
+    newDetachedViewAction = createAndAddAction(viewMenu, tr("New Detached View"), this, SLOT(onNewDetachedView()), QKeySequence("Ctrl+Shift+D"));
+    takeScreenshotAction = createAndAddAction(viewMenu, tr("Take Screenshot"), this, SLOT(onTakeScreenshot()), QKeySequence(Qt::Key_F10));
     viewMenu->addSeparator();
 
-    // Visibility toggles
-    createAndAddAction(viewMenu, tr("Show &Grid"), this, SLOT(onToggleGrid()), Qt::Key_G, true)->setChecked(true); // Default checked
-    createAndAddAction(viewMenu, tr("Show &Collisions"), this, SLOT(onToggleCollisions()), Qt::Key_C, true)->setChecked(true); // Default checked
+    // Zoom controls (already exist, ensure they are here)
+    createAndAddAction(viewMenu, tr("Zoom &In"), this, SLOT(onZoomIn()), QKeySequence::ZoomIn); // Ctrl++
+    createAndAddAction(viewMenu, tr("Zoom &Out"), this, SLOT(onZoomOut()), QKeySequence::ZoomOut); // Ctrl+-
+    createAndAddAction(viewMenu, tr("Zoom &Normal"), this, SLOT(onZoomReset()), QKeySequence("Ctrl+0")); // Ctrl+0
     viewMenu->addSeparator();
 
-    // UI visibility toggles
+    // UI visibility toggles (already exist, ensure they are here)
     createAndAddAction(viewMenu, tr("Show Status &Bar"), this, SLOT(onToggleStatusBar()), Qt::NoModifier, true)->setChecked(true);
-    createAndAddAction(viewMenu, tr("Show Tool&Bar"), this, SLOT(onToggleToolbar()), Qt::NoModifier, true)->setChecked(true); // Default true
+    createAndAddAction(viewMenu, tr("Show Tool&Bar"), this, SLOT(onToggleToolbar()), Qt::NoModifier, true)->setChecked(true);
+    createAndAddAction(viewMenu, tr("Toggle &Fullscreen"), this, SLOT(onToggleFullscreen()), QKeySequence::FullScreen); // F11
     viewMenu->addSeparator();
 
-    createAndAddAction(viewMenu, tr("Toggle &Fullscreen"), this, SLOT(onToggleFullscreen()), QKeySequence::FullScreen);
+    // Items from "View" menu in XML
+    showAllFloorsAction = createAndAddAction(viewMenu, tr("Show all Floors"), this, SLOT(onToggleShowAllFloors()), QKeySequence("Ctrl+W"), true);
+    showAsMinimapAction = createAndAddAction(viewMenu, tr("Show as Minimap"), this, SLOT(onToggleShowAsMinimap()), QKeySequence("Shift+E"), true);
+    showOnlyColorsAction = createAndAddAction(viewMenu, tr("Only show Colors"), this, SLOT(onToggleShowOnlyColors()), QKeySequence("Ctrl+E"), true);
+    showOnlyModifiedAction = createAndAddAction(viewMenu, tr("Only show Modified"), this, SLOT(onToggleShowOnlyModified()), QKeySequence("Ctrl+M"), true);
+    alwaysShowZonesAction = createAndAddAction(viewMenu, tr("Always show zones"), this, SLOT(onToggleAlwaysShowZones()), QKeySequence(), true);
+    extendedHouseShaderAction = createAndAddAction(viewMenu, tr("Extended house shader"), this, SLOT(onToggleExtendedHouseShader()), QKeySequence(), true);
+    viewMenu->addSeparator();
+    showTooltipsAction = createAndAddAction(viewMenu, tr("Show tooltips"), this, SLOT(onToggleShowTooltips()), QKeySequence(Qt::Key_Y), true);
+    createAndAddAction(viewMenu, tr("Show &Grid"), this, SLOT(onToggleGrid()), QKeySequence("Shift+G"), true)->setChecked(true); // Existing, ensure hotkey
+    showClientBoxAction = createAndAddAction(viewMenu, tr("Show client box"), this, SLOT(onToggleShowClientBox()), QKeySequence("Shift+I"), true);
+    viewMenu->addSeparator();
+    ghostItemsAction = createAndAddAction(viewMenu, tr("Ghost loose items"), this, SLOT(onToggleGhostItems()), QKeySequence(Qt::Key_G), true);
+    ghostHigherFloorsAction = createAndAddAction(viewMenu, tr("Ghost higher floors"), this, SLOT(onToggleGhostHigherFloors()), QKeySequence("Ctrl+L"), true);
+    showShadeAction = createAndAddAction(viewMenu, tr("Show shade"), this, SLOT(onToggleShowShade()), QKeySequence(Qt::Key_Q), true);
+    viewMenu->addSeparator();
 
+    // Items from "Show" menu in XML (consolidated into View menu)
+    showAnimationAction = createAndAddAction(viewMenu, tr("Show Animation"), this, SLOT(onToggleShowAnimation()), QKeySequence(Qt::Key_N), true);
+    showLightAction = createAndAddAction(viewMenu, tr("Show Light"), this, SLOT(onToggleShowLight()), QKeySequence(Qt::Key_H), true);
+    showLightStrengthAction = createAndAddAction(viewMenu, tr("Show Light Strength"), this, SLOT(onToggleShowLightStrength()), QKeySequence(Qt::AltModifier + Qt::Key_F3), true);
+    showTechnicalItemsAction = createAndAddAction(viewMenu, tr("Show Technical Items"), this, SLOT(onToggleShowTechnicalItems()), QKeySequence(Qt::AltModifier + Qt::Key_F4), true);
+    viewMenu->addSeparator();
+    showZonesAction = createAndAddAction(viewMenu, tr("Show zones"), this, SLOT(onToggleShowZones()), QKeySequence("Shift+N"), true);
+    showCreaturesAction = createAndAddAction(viewMenu, tr("Show creatures"), this, SLOT(onToggleShowCreatures()), QKeySequence(Qt::AltModifier + Qt::Key_F5), true);
+    showSpawnsAction = createAndAddAction(viewMenu, tr("Show spawns"), this, SLOT(onToggleShowSpawns()), QKeySequence(Qt::AltModifier + Qt::Key_F6), true);
+    showSpecialTilesAction = createAndAddAction(viewMenu, tr("Show special"), this, SLOT(onToggleShowSpecialTiles()), QKeySequence(Qt::AltModifier + Qt::Key_F7), true); // Special tiles like PZ
+    showHousesAction = createAndAddAction(viewMenu, tr("Show houses"), this, SLOT(onToggleShowHouses()), QKeySequence(Qt::AltModifier + Qt::Key_F7), true); // Note: duplicate hotkey with "Show special" in XML
+    showPathingAction = createAndAddAction(viewMenu, tr("Show pathing"), this, SLOT(onToggleShowPathing()), QKeySequence(Qt::AltModifier + Qt::Key_F8), true);
+    showTownsAction = createAndAddAction(viewMenu, tr("Show towns"), this, SLOT(onToggleShowTowns()), QKeySequence(Qt::AltModifier + Qt::Key_F9), true);
+    showWaypointsAction = createAndAddAction(viewMenu, tr("Show waypoints"), this, SLOT(onToggleShowWaypoints()), QKeySequence(Qt::AltModifier + Qt::Key_F10), true);
+    viewMenu->addSeparator();
+    highlightItemsAction = createAndAddAction(viewMenu, tr("Highlight Items"), this, SLOT(onToggleHighlightItems()), QKeySequence(Qt::AltModifier + Qt::Key_F11), true);
+    highlightLockedDoorsAction = createAndAddAction(viewMenu, tr("Highlight Locked Doors"), this, SLOT(onToggleHighlightLockedDoors()), QKeySequence(Qt::AltModifier + Qt::Key_F12), true);
+    showWallHooksAction = createAndAddAction(viewMenu, tr("Show Wall Hooks"), this, SLOT(onToggleShowWallHooks()), QKeySequence(Qt::Key_K), true);
+    
     // Floor (Layer) menu dynamically populated
     QMenu* floorMenu = viewMenu->addMenu(tr("F&loor"));
-    // Original had radio buttons for floors. Add a dummy slot for connecting individual floors.
-    for (int i = 0; i < Map::LayerCount; ++i) { // 0-15 layers
+    for (int i = 0; i < Map::LayerCount; ++i) { 
         QAction* floorAction = floorMenu->addAction(tr("Floor %1").arg(i), this, [this, i](){
             parentWindow->changeFloor(i);
-            // After change, set radio checked here
             updateLayerActions(i);
         });
         floorAction->setCheckable(true);
-        // Map keyboard shortcuts (F1-F12 mapped to 0-11, etc.)
-        // This is simplified. Proper hotkey manager for specific floor key binding should be used.
-        if (i < 12) floorAction->setShortcut(QKeySequence(QString("F%1").arg(i + 1))); // F1-F12 for floors 0-11.
+        if (i < 12) floorAction->setShortcut(QKeySequence(QString("F%1").arg(i + 1)));
     }
-    updateLayerActions(parentWindow->getCurrentLayer()); // Initial check for current layer.
+    updateLayerActions(parentWindow->getCurrentLayer()); 
 
     // View Settings (e.g. LOD, Fog - from Source/src/main_menubar.cpp)
-    viewMenu->addSeparator();
-    createAndAddAction(viewMenu, tr("View &Settings..."), this, SLOT(onChangeViewSettings())); // Placeholder for preferences dialog
+    // Assuming onChangeViewSettings is a placeholder for a dialog that groups these
+    // viewMenu->addSeparator();
+    // createAndAddAction(viewMenu, tr("View &Settings..."), this, SLOT(onChangeViewSettings())); 
 }
 
 void MainMenu::createMapMenu()
 {
-    createAndAddAction(mapMenu, tr("Map &Properties..."), this, SLOT(onMapProperties()));
-    createAndAddAction(mapMenu, tr("Map &Statistics..."), this, SLOT(onMapStatistics()));
-    createAndAddAction(mapMenu, tr("Go To &Position..."), this, SLOT(onGotoPosition()));
-    createAndAddAction(mapMenu, tr("Clear &Modified State"), this, SLOT(onClearModifiedState())); // Replaces the one in Edit menu.
-    mapMenu->addSeparator();
+    createAndAddAction(mapMenu, tr("Map &Properties..."), this, SLOT(onMapProperties()), QKeySequence("Ctrl+P"));
+    createAndAddAction(mapMenu, tr("Map &Statistics..."), this, SLOT(onMapStatistics()), QKeySequence(Qt::Key_F8));
+    createAndAddAction(mapMenu, tr("Go To &Position..."), this, SLOT(onGotoPosition())); // No hotkey in XML, but common
+    // createAndAddAction(mapMenu, tr("Clear &Modified State"), this, SLOT(onClearModifiedState())); // This is in Edit->Other Options in XML
 
-    // Map Transformations
-    createAndAddAction(mapMenu, tr("&Borderize Selection (Ctrl+B)"), this, SLOT(onBorderizeSelection()));
-    createAndAddAction(mapMenu, tr("Borderize Map..."), this, SLOT(onBorderizeMap()));
-    createAndAddAction(mapMenu, tr("Randomize Selection"), this, SLOT(onRandomizeSelection()));
-    createAndAddAction(mapMenu, tr("Randomize Map..."), this, SLOT(onRandomizeMap()));
     mapMenu->addSeparator();
-
-    // Other map operations
-    createAndAddAction(mapMenu, tr("Remove Items (on map)..."), this, SLOT(onMapRemoveItems()));
-    createAndAddAction(mapMenu, tr("Remove Corpses (on map)..."), this, SLOT(onMapRemoveCorpses()));
-    createAndAddAction(mapMenu, tr("Remove &Unreachable Areas (on map)..."), this, SLOT(onMapRemoveUnreachable()));
+    createAndAddAction(mapMenu, tr("Edit &Towns..."), this, SLOT(onMapEditTowns()), QKeySequence("Ctrl+T"));
+    mapMenu->addSeparator();
+    
+    // Cleanup Actions from XML "Map" menu
+    createAndAddAction(mapMenu, tr("Cleanup..."), this, SLOT(onMapCleanup())); 
+    // Other cleanup actions from XML "Idler" menu or "Edit->Other Options"
+    // are handled in createEditMenu or specific MainWindow methods.
+    // "Remove Duplicates..."
     createAndAddAction(mapMenu, tr("Remove &Duplicates (on map)..."), this, SLOT(onMapRemoveDuplicates()));
+    // "Validate Ground..." (Not in XML, but was in previous MainMenu::createMapMenu)
     createAndAddAction(mapMenu, tr("&Validate Ground (on map)..."), this, SLOT(onMapValidateGround()));
-    mapMenu->addSeparator();
 
-    // House/Town Management
-    createAndAddAction(mapMenu, tr("Edit &Towns..."), this, SLOT(onMapEditTowns()));
-    createAndAddAction(mapMenu, tr("Clean &House Items (on map)..."), this, SLOT(onMapCleanHouseItems()));
-    createAndAddAction(mapMenu, tr("Edit &Items (on map)..."), this, SLOT(onMapEditItems())); // Legacy or detailed item editor
-    createAndAddAction(mapMenu, tr("Edit &Monsters (on map)..."), this, SLOT(onMapEditMonsters())); // Legacy or detailed creature editor
+
+    // These were in the old createMapMenu, but XML places them differently or they are more specific.
+    // createAndAddAction(mapMenu, tr("&Borderize Selection (Ctrl+B)"), this, SLOT(onBorderizeSelection())); // In Edit->Border Options
+    // createAndAddAction(mapMenu, tr("Borderize Map..."), this, SLOT(onBorderizeMap())); // In Edit->Border Options
+    // createAndAddAction(mapMenu, tr("Randomize Selection"), this, SLOT(onRandomizeSelection())); // In Edit->Border Options
+    // createAndAddAction(mapMenu, tr("Randomize Map..."), this, SLOT(onRandomizeMap())); // In Edit->Border Options
+    // createAndAddAction(mapMenu, tr("Remove Items (on map)..."), this, SLOT(onMapRemoveItems())); // In Idler
+    // createAndAddAction(mapMenu, tr("Remove Corpses (on map)..."), this, SLOT(onMapRemoveCorpses())); // In Idler
+    // createAndAddAction(mapMenu, tr("Remove &Unreachable Areas (on map)..."), this, SLOT(onMapRemoveUnreachable())); // In Edit->Other Options
+    // createAndAddAction(mapMenu, tr("Clean &House Items (on map)..."), this, SLOT(onMapCleanHouseItems())); // In Edit->Other Options
+    // createAndAddAction(mapMenu, tr("Edit &Items (on map)..."), this, SLOT(onMapEditItems())); // Legacy
+    // createAndAddAction(mapMenu, tr("Edit &Monsters (on map)..."), this, SLOT(onMapEditMonsters())); // Legacy
 }
 
 void MainMenu::createToolsMenu()
 {
-    // Brush Tool Selection (Radio behavior set on toolbar group, not menu)
-    createAndAddAction(toolsMenu, tr("&Normal Brush"), this, SLOT(onBrushTool()), QKeySequence(Qt::Key_N), true); // N for Normal
-    createAndAddAction(toolsMenu, tr("&Eraser"), this, SLOT(onEraserTool()), QKeySequence(Qt::Key_E), true);     // E for Eraser
-    createAndAddAction(toolsMenu, tr("Sele&ction"), this, SLOT(onSelectionTool()), QKeySequence(Qt::Key_S), true); // S for Selection
-    createAndAddAction(toolsMenu, tr("F&lood Fill"), this, SLOT(onFloodFillTool()), QKeySequence(Qt::Key_F), true); // F for FloodFill
+    // Brush Tool Selection
+    createAndAddAction(toolsMenu, tr("&Normal Brush"), this, SLOT(onBrushTool()), QKeySequence(Qt::Key_N), true);
+    createAndAddAction(toolsMenu, tr("&Eraser"), this, SLOT(onEraserTool()), QKeySequence(Qt::Key_E), true);
+    createAndAddAction(toolsMenu, tr("Sele&ction"), this, SLOT(onSelectionTool()), QKeySequence(Qt::Key_S), true);
+    createAndAddAction(toolsMenu, tr("F&lood Fill"), this, SLOT(onFloodFillTool()), QKeySequence(Qt::Key_F), true);
     toolsMenu->addSeparator();
 
-    // Specialized Creation Tools
-    createAndAddAction(toolsMenu, tr("Island &Generator..."), this, SLOT(onGenerateIsland()));
-    createAndAddAction(toolsMenu, tr("&Border Editor..."), this, SLOT(onCreateBorder()));
-    createAndAddAction(toolsMenu, tr("&Tileset Editor..."), this, SLOT(onTilesetEditor()));
-    createAndAddAction(toolsMenu, tr("Selection to Doodad"), this, SLOT(onSelectionToDoodad())); // New from Source
+    // Specialized Creation Tools from XML "Tools" menu (if any) or general editor tools
+    createAndAddAction(toolsMenu, tr("Island &Generator..."), this, SLOT(onGenerateIsland())); // Action: GENERATE_ISLAND from XML
+    createAndAddAction(toolsMenu, tr("&Border Editor..."), this, SLOT(onCreateBorder()));     // Action: CREATE_BORDER from XML
+    tilesetEditorAction = createAndAddAction(toolsMenu, tr("&Tileset Editor..."), this, SLOT(onTilesetEditor())); // No specific XML action, but common tool
+    selectionToDoodadAction = createAndAddAction(toolsMenu, tr("Selection to Doodad"), this, SLOT(onSelectionToDoodad())); // No specific XML action
     toolsMenu->addSeparator();
 
-    createAndAddAction(toolsMenu, tr("Toggle &Automagic Borders (A)"), this, SLOT(onToggleAutomagic()), Qt::Key_A, true); // Automagic toggle.
+    // Automagic toggle was in Edit->Border Options via XML (action: AUTOMAGIC), but also fits Tools
+    // Re-using automagicAction from Edit menu if it's global, or create a new one if context specific.
+    // For now, assuming the one in Edit menu is the primary toggle.
+    // If a dedicated Tools menu toggle is needed:
+    // createAndAddAction(toolsMenu, tr("Toggle &Automagic Borders"), this, SLOT(onToggleBorderAutomagic()), QKeySequence(Qt::Key_A), true);
+
 
     // Connect radio-like behavior for tools
     QActionGroup* toolGroup = new QActionGroup(this);
     toolGroup->setExclusive(true);
     // Add previously created tool actions to this group
-    toolGroup->addAction(toolsMenu->actions().at(0)); // Normal Brush
-    toolGroup->addAction(toolsMenu->actions().at(1)); // Eraser
-    toolGroup->addAction(toolsMenu->actions().at(2)); // Selection
-    toolGroup->addAction(toolsMenu->actions().at(3)); // Flood Fill
+    // Ensure actions are added in the order they appear above the separator.
+    for(int i=0; i < 4 && i < toolsMenu->actions().size(); ++i) { // Only add the first 4 (brush tools)
+        toolGroup->addAction(toolsMenu->actions().at(i));
+    }
     
-    // Set initial tool check (based on initial MainWindow/MapView state)
-    // Parent window passes initial brush, check its type in the QActionGroup for display
     updateToolActions(parentWindow->getMapView()->getBrush()->getType());
 }
 
@@ -467,6 +521,27 @@ void MainMenu::onLoadSprDat() {
     parentWindow->loadSprDatFiles();
 }
 
+// --- New File Menu Slot Implementations ---
+void MainMenu::onGenerateMap() { 
+    parentWindow->generateMap(); 
+}
+void MainMenu::onCloseMap() { 
+    parentWindow->closeMap(); 
+}
+void MainMenu::onImportMapFile() { 
+    parentWindow->importMapFile();
+}
+void MainMenu::onImportMonsters() { 
+    parentWindow->importMonsters();
+}
+void MainMenu::onExportTilesets() { 
+    parentWindow->exportTilesets();
+}
+void MainMenu::onReloadData() { 
+    parentWindow->reloadData(); 
+}
+
+
 // --- Edit Menu Slots ---
 void MainMenu::onUndo() { parentWindow->undo(); }
 void MainMenu::onRedo() { parentWindow->redo(); }
@@ -481,13 +556,45 @@ void MainMenu::onDeselectAll() { parentWindow->deselectAll(); }
 void MainMenu::onFindItem() { parentWindow->showFindItemDialog(); }
 void MainMenu::onFindCreature() { parentWindow->showFindCreatureDialog(); }
 void MainMenu::onFindSimilarItems() { parentWindow->showFindSimilarItemsDialog(); }
-void MainMenu::onReplaceItems() { QMessageBox::information(parentWindow, tr("Replace Items"), tr("Replace Items dialog not yet implemented.")); }
+// void MainMenu::onReplaceItems() { QMessageBox::information(parentWindow, tr("Replace Items"), tr("Replace Items dialog not yet implemented.")); } // Now a new slot
 void MainMenu::onMapCleanup() { QMessageBox::information(parentWindow, tr("Map Cleanup"), tr("Map Cleanup dialog not yet implemented.")); }
-void MainMenu::onClearHouseTiles() { QMessageBox::information(parentWindow, tr("Clear House Tiles"), tr("Clear Invalid House Tiles not yet implemented.")); }
-void MainMenu::onClearModifiedState() { parentWindow->getMap()->setModified(false); parentWindow->updateWindowTitle(); } // Clear modified flag in Map.
+void MainMenu::onClearHouseTiles() { 
+    // parentWindow->clearInvalidHouses(); // Call MainWindow method
+    QMessageBox::information(parentWindow, tr("Clear House Tiles"), tr("Clear Invalid House Tiles not yet implemented.")); 
+}
+void MainMenu::onClearModifiedState() { 
+    parentWindow->getMap()->setModified(false); 
+    parentWindow->updateWindowTitle(); 
+} 
 void MainMenu::onJumpToBrush() { QMessageBox::information(parentWindow, tr("Jump to Brush"), tr("Jump to Brush dialog not yet implemented.")); }
 void MainMenu::onJumpToItemBrush() { QMessageBox::information(parentWindow, tr("Jump to Item Brush"), tr("Jump to Item Brush dialog not yet implemented.")); }
 
+// --- New Edit Menu Slot Implementations ---
+void MainMenu::onReplaceItems() {
+    // parentWindow->replaceItems(); // Assuming MainWindow will have this
+    QMessageBox::information(parentWindow, tr("Replace Items"), tr("Replace Items not yet implemented."));
+}
+void MainMenu::onRefreshItems() {
+    // parentWindow->refreshItems();
+    QMessageBox::information(parentWindow, tr("Refresh Items"), tr("Refresh Items not yet implemented."));
+}
+void MainMenu::onToggleBorderAutomagic() {
+    bool checked = automagicAction->isChecked();
+    parentWindow->toggleBorderSystem(checked); // Pass checked state to MainWindow
+    // The updateViewActions should reflect the check state if BorderSystem signals back or is polled.
+}
+void MainMenu::onBorderizeSelection() {
+    parentWindow->borderizeSelection();
+}
+void MainMenu::onBorderizeMap() {
+    parentWindow->borderizeMap();
+}
+void MainMenu::onRandomizeSelection() {
+    parentWindow->randomizeSelection();
+}
+void MainMenu::onRandomizeMap() {
+    parentWindow->randomizeMap();
+}
 
 // --- View Menu Slots ---
 void MainMenu::onZoomIn() { parentWindow->zoomIn(); }
@@ -498,7 +605,38 @@ void MainMenu::onToggleCollisions() { parentWindow->toggleCollisions(qobject_cas
 void MainMenu::onToggleStatusBar() { parentWindow->toggleStatusBar(qobject_cast<QAction*>(sender())->isChecked()); }
 void MainMenu::onToggleToolbar() { parentWindow->toggleToolbar(qobject_cast<QAction*>(sender())->isChecked()); }
 void MainMenu::onToggleFullscreen() { parentWindow->toggleFullscreen(); }
-void MainMenu::onChangeViewSettings() { QMessageBox::information(parentWindow, tr("View Settings"), tr("View Settings dialog not yet implemented (LOD, fog etc).")); }
+// void MainMenu::onChangeViewSettings() { QMessageBox::information(parentWindow, tr("View Settings"), tr("View Settings dialog not yet implemented (LOD, fog etc).")); }
+
+// New View Menu Slot Implementations
+void MainMenu::onNewView() { QMessageBox::information(parentWindow, tr("New View"), tr("New View not implemented.")); }
+void MainMenu::onNewDetachedView() { QMessageBox::information(parentWindow, tr("New Detached View"), tr("New Detached View not implemented.")); }
+void MainMenu::onTakeScreenshot() { parentWindow->takeScreenshot(); }
+void MainMenu::onToggleShowAllFloors() { parentWindow->toggleShowAllFloors(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowAsMinimap() { parentWindow->toggleShowAsMinimap(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowOnlyColors() { parentWindow->toggleShowOnlyColors(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowOnlyModified() { parentWindow->toggleShowOnlyModified(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleAlwaysShowZones() { parentWindow->toggleAlwaysShowZones(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleExtendedHouseShader() { parentWindow->toggleExtendedHouseShader(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowTooltips() { parentWindow->toggleShowTooltips(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowClientBox() { parentWindow->toggleShowClientBox(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleGhostItems() { parentWindow->toggleGhostItems(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleGhostHigherFloors() { parentWindow->toggleGhostHigherFloors(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowShade() { parentWindow->toggleShowShade(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowAnimation() { parentWindow->toggleShowAnimation(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowLight() { parentWindow->toggleShowLight(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowLightStrength() { parentWindow->toggleShowLightStrength(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowTechnicalItems() { parentWindow->toggleShowTechnicalItems(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowZones() { parentWindow->toggleShowZones(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowCreatures() { parentWindow->toggleShowCreatures(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowSpawns() { parentWindow->toggleShowSpawns(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowSpecialTiles() { parentWindow->toggleShowSpecialTiles(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowHouses() { parentWindow->toggleShowHouses(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowPathing() { parentWindow->toggleShowPathing(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowTowns() { parentWindow->toggleShowTowns(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowWaypoints() { parentWindow->toggleShowWaypoints(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleHighlightItems() { parentWindow->toggleHighlightItems(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleHighlightLockedDoors() { parentWindow->toggleHighlightLockedDoors(qobject_cast<QAction*>(sender())->isChecked()); }
+void MainMenu::onToggleShowWallHooks() { parentWindow->toggleShowWallHooks(qobject_cast<QAction*>(sender())->isChecked()); }
 
 
 // --- Map Menu Slots ---
@@ -522,11 +660,20 @@ void MainMenu::onRandomizeMap() { QMessageBox::information(parentWindow, tr("Ran
 // More map actions
 void MainMenu::onMapRemoveItems() { QMessageBox::information(parentWindow, tr("Remove Items"), tr("Remove Items (on map) not yet implemented.")); }
 void MainMenu::onMapRemoveCorpses() { QMessageBox::information(parentWindow, tr("Remove Corpses"), tr("Remove Corpses (on map) not yet implemented.")); }
-void MainMenu::onMapRemoveUnreachable() { QMessageBox::information(parentWindow, tr("Remove Unreachable Areas"), tr("Remove Unreachable Areas (on map) not yet implemented.")); }
-void MainMenu::onMapRemoveDuplicates() { QMessageBox::information(parentWindow, tr("Remove Duplicates"), tr("Remove Duplicates (on map) not yet implemented.")); }
-void MainMenu::onMapValidateGround() { QMessageBox::information(parentWindow, tr("Validate Ground"), tr("Validate Ground (on map) not yet implemented.")); }
+void MainMenu::onMapRemoveUnreachable() { parentWindow->mapRemoveUnreachable(); }
+void MainMenu::onMapRemoveDuplicates() { 
+    // parentWindow->mapRemoveDuplicates(); 
+    QMessageBox::information(parentWindow, tr("Remove Duplicates"), tr("Remove Duplicates (on map) not yet implemented."));
+}
+void MainMenu::onMapValidateGround() { 
+    // parentWindow->mapValidateGround();
+    QMessageBox::information(parentWindow, tr("Validate Ground"), tr("Validate Ground (on map) not yet implemented."));
+}
 // House/Town Management
-void MainMenu::onMapEditTowns() { QMessageBox::information(parentWindow, tr("Edit Towns"), tr("Edit Towns dialog not yet implemented.")); }
+void MainMenu::onMapEditTowns() { 
+    // parentWindow->mapEditTowns();
+    QMessageBox::information(parentWindow, tr("Edit Towns"), tr("Edit Towns dialog not yet implemented.")); 
+}
 void MainMenu::onMapEditItems() { QMessageBox::information(parentWindow, tr("Edit Items"), tr("Edit Items (on map) not yet implemented.")); }
 void MainMenu::onMapEditMonsters() { QMessageBox::information(parentWindow, tr("Edit Monsters"), tr("Edit Monsters (on map) not yet implemented.")); }
 void MainMenu::onMapCleanHouseItems() { QMessageBox::information(parentWindow, tr("Clean House Items"), tr("Clean House Items (on map) not yet implemented.")); }
@@ -537,14 +684,24 @@ void MainMenu::onBrushTool() { parentWindow->setCurrentTool(Brush::Type::Normal)
 void MainMenu::onEraserTool() { parentWindow->setCurrentTool(Brush::Type::Eraser); }
 void MainMenu::onSelectionTool() { parentWindow->setCurrentTool(Brush::Type::Selection); }
 void MainMenu::onFloodFillTool() { parentWindow->setCurrentTool(Brush::Type::FloodFill); }
-void MainMenu::onGenerateIsland() { QMessageBox::information(parentWindow, tr("Generate Island"), tr("Island Generator dialog not yet implemented.")); }
-void MainMenu::onCreateBorder() { QMessageBox::information(parentWindow, tr("Border Editor"), tr("Border Editor dialog not yet implemented.")); }
-void MainMenu::onTilesetEditor() { QMessageBox::information(parentWindow, tr("Tileset Editor"), tr("Tileset Editor dialog not yet implemented.")); }
-void MainMenu::onSelectionToDoodad() { QMessageBox::information(parentWindow, tr("Selection to Doodad"), tr("Selection to Doodad brush conversion not yet implemented.")); }
-void MainMenu::onToggleAutomagic() { parentWindow->toggleBorderSystem(qobject_cast<QAction*>(sender())->isChecked()); }
-void MainMenu::onGenerateMap() {
-    QMessageBox::information(parentWindow, tr("Generate Map"), tr("New Map generation from template not yet implemented."));
+void MainMenu::onGenerateIsland() { 
+    // parentWindow->generateIsland();
+    QMessageBox::information(parentWindow, tr("Generate Island"), tr("Island Generator dialog not yet implemented.")); 
 }
+void MainMenu::onCreateBorder() { 
+    // parentWindow->createBorder();
+    QMessageBox::information(parentWindow, tr("Border Editor"), tr("Border Editor dialog not yet implemented.")); 
+}
+void MainMenu::onTilesetEditor() { 
+    // parentWindow->openTilesetEditor();
+    QMessageBox::information(parentWindow, tr("Tileset Editor"), tr("Tileset Editor dialog not yet implemented.")); 
+}
+void MainMenu::onSelectionToDoodad() { 
+    // parentWindow->selectionToDoodad();
+    QMessageBox::information(parentWindow, tr("Selection to Doodad"), tr("Selection to Doodad brush conversion not yet implemented.")); 
+}
+void MainMenu::onToggleAutomagic() { parentWindow->toggleBorderSystem(automagicAction->isChecked()); } 
+// void MainMenu::onGenerateMap() { } // This slot is for File menu.
 
 
 // --- Network/Live Menu Slots ---

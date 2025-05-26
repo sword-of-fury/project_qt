@@ -1,0 +1,14 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>images/brush.png</file>
+        <file>images/eraser.png</file>
+        <file>images/floodfill.png</file>
+        <file>images/selection.png</file>
+        <file>images/pencil.png</file> <!-- NEW: Added for PencilBrush -->
+        <file>images/aboutqt.png</file>
+        <file>images/zoomin.png</file>
+        <file>images/zoomout.png</file>
+        <file>images/zoomreset.png</file>
+    </qresource>
+</RCC>

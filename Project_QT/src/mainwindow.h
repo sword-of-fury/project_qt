@@ -1,0 +1,193 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QMainWindow>
+#include <QMenu>
+#include <QToolBar>
+#include <QStatusBar>
+#include <QDockWidget>
+#include <QListWidget> // For item/creature managers in dock widgets
+#include <QUndoStack> // For Undo/Redo
+
+// Project specific headers
+#include "map.h"
+#include "mapview.h" // Now a QGraphicsView
+#include "mainmenu.h" // The main menu class (Qt-based)
+#include "maintoolbar.h" // The main toolbar class (Qt-based)
+#include "selectiontoolbar.h" // The selection toolbar (Qt-based)
+#include "toolspanel.h" // Tools palette (dockable)
+#include "layerwidget.h" // Layer controls (dockable)
+#include "propertyeditordock.h" // Property editor (dockable)
+#include "brush.h" // For Brush::Type enum
+
+// Forward declarations of related classes
+class Item;
+class Creature;
+class Tile;
+class Map; // Already included but good practice for pointers
+class MapView; // Already included
+class MainMenu; // Already included
+class MainToolBar; // Already included
+class LayerWidget; // Already included
+class ToolsPanel; // Already included
+class PropertyEditorDock; // Already included
+class Brush; // Already included
+class BorderSystem; // For access to border automagic (part of Map class now)
+
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    explicit MainWindow(QWidget* parent = nullptr);
+    virtual ~MainWindow();
+
+    // Map properties dialog (placeholder methods for now, will open proper dialogs later)
+    void showMapPropertiesDialog();
+    void showMapStatisticsDialog();
+    void showGotoPositionDialog();
+    void showFindItemDialog();      // Currently doubles as 'Browse Tile' & 'Find Similar'
+    void showFindCreatureDialog();
+    void showFindSimilarItemsDialog(); // Could be merged into find item
+    void showBorderSystemDialog();  // Dialog for border automagic settings
+    
+    // Global editor operations triggered from menu/toolbar/hotkeys
+    void createNewMap();
+    void openMap();
+    bool loadMap(const QString& filePath); // Actual loading logic
+    bool saveMap();
+    bool saveMapAs();
+    
+    void undo();
+    void redo();
+    void cutSelection();
+    void copySelection();
+    void pasteSelection();
+    void deleteSelection();
+    void selectAll();
+    void deselectAll();
+
+    // View related actions
+    void zoomIn();
+    void zoomOut();
+    void zoomReset();
+    void toggleGrid(bool show);
+    void toggleCollisions(bool show);
+    void toggleStatusBar(bool show);
+    void toggleToolbar(bool show);
+    void toggleBorderSystem(bool enabled); // Automagic toggle
+    void toggleFullscreen(); // From Source/main_menubar.h
+
+    // Tool/Brush related actions
+    void setCurrentTool(Brush::Type toolType);
+    void increaseBrushSize();
+    void decreaseBrushSize();
+    void switchToolMode(); // Toggle between selection and drawing mode
+    void selectPreviousBrush(); // Selects previous brush after undo/mode switch
+
+    // Floor/Layer actions
+    void changeFloor(int layer); // Changes the active editing layer
+    int getCurrentLayer() const { return currentLayer; }
+
+    // State Getters (for connecting other widgets/updating UI)
+    QUndoStack* getUndoStack() const { return undoStack; } // For connecting Undo/Redo actions
+    Map* getMap() const { return &Map::getInstance(); }
+    MapView* getMapView() const { return mapView; }
+    BorderSystem* getBorderSystem() const { return borderSystem; } // Access the Map's BorderSystem
+
+    bool IsPasting() const { return isPasting; }
+    void StartPasting() { isPasting = true; } // For paste preview mode
+    void EndPasting() { isPasting = false; } // Exits paste preview mode
+
+    void loadSprDatFiles(); // New method for loading SPR/DAT files
+
+public slots: // Slots connected to various UI signals or map signals
+    // General UI updates
+    void updateWindowTitle();
+    void updateStatusBar();
+    void updateDockWindows(); // For docking state changes (if implemented)
+    void loadSettings();      // Loads application settings
+    void saveSettings();      // Saves application settings
+
+    // Map/Tool/Selection-related
+    void onToolSelected(int toolId);        // From ToolsPanel
+    void onLayerChanged(int layer);         // From LayerWidget / LayerStack (Active Layer)
+    void onItemSelected(Item* item);        // From ItemList in ToolsPanel (Brush palette selection)
+    void onToolChanged(Brush::Type type);   // From Brush (brush is activated programmatically)
+    void onCreatureSelected(QListWidgetItem* item); // From CreatureList (Brush palette selection)
+    void onZoomChanged(double zoom);        // From MapView
+    void onSelectionChanged();              // From Map (when selection rectangle changes)
+    void onUndoStackChanged();              // From QUndoStack
+    void onMapModified();                   // From Map
+    void onMousePositionChanged(const QPoint& position); // From MapView (mouse hover)
+
+    // Property Editor related (from MapView clicks or specific object selectors)
+    void onTileSelected(Tile* tile);
+    void onMapItemSelected(Item* item);
+    void onMapCreatureSelected(Creature* creature);
+    void onObjectDeselected(); // For property editor to show "no selection"
+
+    // Implementation of copy/cut/paste/delete logic requested by MapView context menu
+    void onMapViewCopyRequest(const QRect& selectionRect);
+    void onMapViewCutRequest(const QRect& selectionRect);
+    void onMapViewPasteRequest(const QPoint& targetPos);
+    void onMapViewDeleteRequest(const QRect& selectionRect);
+
+
+protected:
+    void setupUi();            // Initializes all main UI components
+    void createDockWindows();  // Creates all dockable panels
+    void createStatusBar();    // Sets up the status bar layout and labels
+
+private:
+    MapView* mapView; // The main map display widget
+    MainMenu* mainMenu; // Main menu bar logic
+    MainToolBar* mainToolBar; // Main toolbar logic
+    SelectionToolbar* selectionToolbar; // Toolbar specific to selection tool
+
+    // Dock Widgets
+    QDockWidget* toolsDock;
+    QDockWidget* layersDock;
+    QDockWidget* itemDock;
+    QDockWidget* creatureDock;
+    QDockWidget* propertyEditorDock;
+    
+    // Widgets within docks (managed by QDockWidget)
+    ToolsPanel* toolsPanel; // Tool buttons, item/creature selection for brush
+    LayerWidget* layerWidget; // Layer controls (active layer, visibility)
+    QListWidget* itemListWidget; // For item selection (direct use in palette dock)
+    QListWidget* creatureListWidget; // For creature selection
+    PropertyEditorDock* propertyEditor; // Dock with stacked property editors
+
+    QUndoStack* undoStack; // Central Undo/Redo stack
+    Map* currentMap; // Reference to the singleton Map object
+
+    // Status Bar Labels (for display in createStatusBar)
+    QLabel* positionLabel;
+    QLabel* layerLabel;
+    QLabel* selectionLabel;
+    QLabel* zoomLabel;
+    
+    // Map data for display in lists
+    QList<Item*> loadedItems; // Pointers to all loaded items for the item list
+    QList<Creature*> loadedCreatures; // Pointers to all loaded creatures for creature list
+
+    // Internal state variables
+    QString currentMapFile; // Current map file path
+    int currentLayer; // Tracks current active layer, matches LayerWidget value
+    bool isPasting; // Flag for paste preview mode
+
+    BorderSystem* borderSystem; // The automagic border system from Map
+
+    // Helper methods for internal logic or setup
+    void updateWindowTitle();    // Updates window title based on map file and modified state
+    void populateItemList();     // Fills the item list widget
+    void populateCreatureList(); // Fills the creature list widget
+    void registerDefaultBorderTiles(); // For BorderSystem init, from original mainwindow
+    void createMenus();          // Old stub, now implemented via MainMenu class
+    void createToolBar();        // Old stub, now implemented via MainToolBar class
+    void createDockPanels();     // Placeholder
+};
+
+#endif // MAINWINDOW_H

@@ -203,23 +203,48 @@ bool ItemManager::loadItemsFromJson(const QString& filename)
         ItemProperties props;
         props.id = id;
         props.name = name;
-        props.blocking = blocking;
-        props.walkable = walkable;
-        props.collidable = collision;
+        // Initialize ItemPropertyFlags from the direct "flags" field in JSON if present
+        props.flags = ItemPropertyFlags(obj["flags"].toUInt(static_cast<quint32>(ItemPropertyFlag::PropNone)));
+
+        // Set boolean fields from JSON
+        props.blocking = obj["blocking"].toBool(false);
+        props.walkable = obj["walkable"].toBool(true); // Default to true if not specified
+        props.collidable = obj["collision"].toBool(false); // "collision" in JSON maps to collidable
+        props.stackable = obj["stackable"].toBool(false); // Assuming "stackable" field exists
+        props.container = obj["container"].toBool(false); // Assuming "container" field exists
+        props.fluidContainer = obj["fluidContainer"].toBool(false); // Assuming "fluidContainer" field exists
+        // ... any other direct boolean properties from JSON
+
+        // Update props.flags based on these boolean fields, if JSON doesn't provide a pre-combined mask
+        // This ensures consistency if JSON provides individual bools OR a combined flag value.
+        // If "flags" from JSON is comprehensive, these |= operations might be redundant but harmless.
+        if (props.blocking) props.flags |= ItemPropertyFlag::IsBlocking;
+        if (props.stackable) props.flags |= ItemPropertyFlag::IsStackable;
+        if (props.container) props.flags |= ItemPropertyFlag::IsContainer; // Example
+        if (props.fluidContainer) props.flags |= ItemPropertyFlag::IsFluidContainer; // Example
+        // Add similar lines for other boolean properties that map to flags if they are expected in JSON
+
         // Initialize other properties from JSON if available
-        props.spriteId = obj["spriteId"].toInt(0); // Assuming spriteId is in JSON
-        props.flags = obj["flags"].toUInt(0); // Assuming flags are in JSON
-        props.weight = obj["weight"].toInt(0); // Assuming weight is in JSON
-        props.speed = obj["speed"].toInt(0); // Assuming speed is in JSON
-        props.lightLevel = obj["lightLevel"].toInt(0); // Assuming lightLevel is in JSON
-        props.lightColor = obj["lightColor"].toInt(0); // Assuming lightColor is in JSON
-        props.wareId = obj["wareId"].toInt(0); // Assuming wareId is in JSON
-        props.alwaysOnTop = obj["alwaysOnTop"].toInt(0); // Assuming alwaysOnTop is in JSON
-        props.alwaysOnTopOrder = obj["alwaysOnTopOrder"].toInt(0); // Assuming alwaysOnTopOrder is in JSON
-        props.drawHeight = obj["drawHeight"].toInt(0); // Assuming drawHeight is in JSON
-        props.drawOffsetX = obj["drawOffsetX"].toInt(0); // Assuming drawOffsetX is in JSON
-        props.drawOffsetY = obj["drawOffsetY"].toInt(0); // Assuming drawOffsetY is in JSON
-        props.frames = obj["frames"].toInt(1); // Assuming frames are in JSON, default to 1
+        props.spriteId = obj["spriteId"].toInt(0); 
+        props.weight = obj["weight"].toInt(0); 
+        props.speed = obj["speed"].toInt(0); 
+        props.lightLevel = obj["lightLevel"].toInt(0); 
+        props.lightColor = obj["lightColor"].toInt(0); 
+        props.wareId = obj["wareId"].toInt(0); 
+        props.alwaysOnTopOrder = obj["alwaysOnTopOrder"].toInt(0); // JSON should use alwaysOnTopOrder
+        // props.alwaysOnTop field in ItemProperties is quint8, usually for .dat's "bottom" flag.
+        // If JSON 'alwaysOnTop' means the RME "bottom" flag:
+        if (obj.contains("alwaysOnBottom") && obj["alwaysOnBottom"].toBool(false)) {
+             props.flags |= ItemPropertyFlag::IsAlwaysOnBottom;
+        }
+        // If JSON 'alwaysOnTop' means actual top drawing:
+        // This is usually handled by alwaysOnTopOrder or a specific flag like ItemPropertyFlag::IsAlwaysOnTop (actual top)
+        // which might be set if alwaysOnTopOrder > some_threshold.
+
+        props.drawHeight = obj["drawHeight"].toInt(0); 
+        props.drawOffsetX = obj["drawOffsetX"].toInt(0); 
+        props.drawOffsetY = obj["drawOffsetY"].toInt(0); 
+        props.frames = obj["frames"].toInt(1); 
 
         // Load attributes
         if (obj.contains("attributes") && obj["attributes"].isObject()) {
@@ -501,18 +526,61 @@ bool ItemManager::loadTibiaDat(const QString& filename) {
         props.name = datItem.name;
         props.spriteId = datItem.spriteId; // This ID will be used to get sprite from SpriteManager
         
-        // Populate flags and other properties from datItem
-        props.stackable = (datItem.flags & 0x01) != 0; 
-        props.container = (datItem.flags & 0x02) != 0; 
-        props.fluidContainer = (datItem.flags & 0x04) != 0; // Example flag, adjust if needed
-        // Add more flag interpretations as necessary
+        // Initialize ItemPropertyFlags
+        props.flags = ItemPropertyFlag::PropNone; 
+
+        // Map DatItem direct members to ItemProperties boolean fields and ItemPropertyFlags
+        props.blocking = (datItem.blocking != 0);
+        if (props.blocking) {
+            props.flags |= ItemPropertyFlag::IsBlocking;
+        }
+
+        // props.walkable should be set based on datItem.walkable.
+        // The flag ItemPropertyFlag::IsWalkable is not standard in wx, usually it's !IsBlocking.
+        // For now, just set the boolean field. If a flag is needed, it can be added to ItemPropertyFlag.
+        props.walkable = (datItem.walkable != 0); 
+
+        // Map DatItem::flags (quint8) to ItemPropertyFlags
+        if (datItem.flags & 0x01) props.flags |= ItemPropertyFlag::BlockPathfinder; 
+        if (datItem.flags & 0x02) props.flags |= ItemPropertyFlag::IsStackable;    
+        if (datItem.flags & 0x04) props.flags |= ItemPropertyFlag::IsUseable;      
+        if (datItem.flags & 0x08) props.flags |= ItemPropertyFlag::IsReadable;     
+        if (datItem.flags & 0x10) props.flags |= ItemPropertyFlag::IsMoveable;     
+        if (datItem.flags & 0x20) props.flags |= ItemPropertyFlag::BlockMissiles;  
+        if (datItem.flags & 0x40) props.flags |= ItemPropertyFlag::HasElevation;   
+        if (datItem.flags & 0x80) props.flags |= ItemPropertyFlag::IsPickupable;   
+
+        // Set props.stackable (bool) from the flag for direct access in ItemProperties
+        props.stackable = (props.flags & ItemPropertyFlag::IsStackable) != ItemPropertyFlag::PropNone;
+
+        // Handle 'alwaysOnTop' from DatItem (which means 'always on bottom' in RME context for .dat)
+        if (datItem.alwaysOnTop != 0) { 
+            props.flags |= ItemPropertyFlag::IsAlwaysOnBottom;
+        }
         
-        props.blocking = datItem.blocking != 0;
-        props.walkable = datItem.walkable != 0; 
-        props.collidable = datItem.collidable != 0;
+        // Other direct properties from DatItem
         props.weight = datItem.weight;
         props.speed = datItem.speed;
-        // Copy other relevant fields from datItem to props.attributes if needed
+        props.lightLevel = datItem.lightLevel;
+        props.lightColor = datItem.lightColor;
+        props.wareId = datItem.wareId;
+        props.alwaysOnTopOrder = datItem.alwaysOnTopOrder; // This is the actual "top order" for drawing
+
+        // Deriving IsGroundTile based on alwaysOnTopOrder (0 or 1) as a heuristic
+        // This was done in the previous turn and seems a reasonable assumption for .dat items.
+        if (props.alwaysOnTopOrder == 0 || props.alwaysOnTopOrder == 1) {
+             props.flags |= ItemPropertyFlag::IsGroundTile; 
+        }
+        
+        props.collidable = (datItem.collidable != 0);
+        // If datItem.collidable implies general blocking, this would be the place:
+        // if (props.collidable) props.flags |= ItemPropertyFlag::IsBlocking;
+        // However, IsBlocking is already set from datItem.blocking, so this might be redundant
+        // or datItem.collidable has a different meaning (e.g. specific for item-item collision).
+
+        // Flags like IsContainer, IsDoor, etc., are not directly in datItem.flags or basic members.
+        // They are part of ItemPropertyFlag enum but their source from .dat is not defined here.
+        // They might be set based on item ID ranges or editor-specific logic outside .dat loading.
 
         m_itemProperties[props.id] = props; // Store properties, keyed by client ID from .dat
     }

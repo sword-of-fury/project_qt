@@ -9,15 +9,27 @@
 #include <QString>
 #include <QRect>
 #include <QSet>
-
+#include <QStringList> // Added for m_warnings
 #include <vector>
 
 #include "tile.h"
 #include "item.h"
 #include "layer.h"
 #include "bordersystem.h"
+#include "spawn.h" // Include the full definition of Spawn
 
 // Forward declarations for specific structures
+// class Spawn; // No longer needed, spawn.h is included
+
+struct MapVersion {
+    // Based on common OTBM versioning, add more if needed from wx sources
+    enum OtbmVersion { MAP_OTBM_1, MAP_OTBM_2, MAP_OTBM_3, MAP_OTBM_4 } otbm_version;
+    // Add client version enum/field if needed, e.g., based on CLIENT_VERSION_XXX from wx
+    int client_version_major;
+    int client_version_minor;
+    int client_version_patch;
+};
+
 struct Position {
     int x, y, z;
     Position(int _x = 0, int _y = 0, int _z = 0) : x(_x), y(_y), z(_z) {}
@@ -45,12 +57,19 @@ struct HouseInfo {
 
 // Structures needed for Map::cleanDuplicateItems from Source/map.h
 struct PropertyFlags {
-    bool match_uid;
-    bool match_actionid;
-    bool match_text;
-    bool match_attribute;
-    bool match_name; // From Source/map.h (used for item name matching)
-    // Add any other flags from original Source/map.h PropertyFlags
+    bool ignore_unpassable = false;
+    bool ignore_unmovable = false;
+    bool ignore_block_missiles = false;
+    bool ignore_block_pathfinder = false;
+    bool ignore_readable = false;
+    bool ignore_writeable = false;
+    bool ignore_pickupable = false;
+    bool ignore_stackable = false;
+    bool ignore_rotatable = false;
+    bool ignore_hangable = false;
+    bool ignore_hook_east = false;
+    bool ignore_hook_south = false;
+    bool ignore_elevation = false;
 };
 
 class Map : public QObject
@@ -63,6 +82,9 @@ public:
     virtual ~Map();
 
     void clear();
+
+    MapVersion getVersion() const { return m_version; }
+    void setVersion(const MapVersion& version) { m_version = version; setModified(true); }
 
     void setSize(const QSize& size);
     QSize getSize() const { return size; }
@@ -149,17 +171,30 @@ signals:
     void setName(const std::string& n);
     bool hasFile() const;
     bool getLoaderError() const { return false; }
-    bool hasError() const { return false; }
-    const wxArrayString& getWarnings() const;
+    // bool hasError() const { return false; } // Replaced by getError().isEmpty()
+    // const wxArrayString& getWarnings() const; // Replaced by getWarnings()
+    QStringList getWarnings() const { return m_warnings; }
+    void addWarning(const QString& warning) { m_warnings.append(warning); }
+    void clearWarnings() { m_warnings.clear(); }
+    QString getError() const { return m_error; }
+    void setError(const QString& error) { m_error = error; }
+    void clearError() { m_error.clear(); }
+    bool hasError() const { return !m_error.isEmpty(); }
+
 
     BorderSystem* getBorderSystem() const { return borderSystem; }
     
 private:
     static Map* s_instance; // The singleton instance
-    explicit Map(QObject* parent = nullptr);
+    // explicit Map(QObject* parent = nullptr); // Already declared public
 
     QVector<QVector<QVector<Tile*>>> tiles; // tiles[x][y][z]
     QSize size;
+
+    MapVersion m_version;
+    QStringList m_warnings;
+    QString m_error;
+    QList<Spawn*> m_spawns;
 
     QVector<Layer*> layers; // Managed layers
 

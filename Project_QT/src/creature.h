@@ -4,6 +4,19 @@
 #include <QString>
 #include <QPixmap>
 
+// Define Direction Enum
+enum class Direction {
+    North = 0,
+    East = 1,
+    South = 2,
+    West = 3,
+    // NorthEast, SouthEast, SouthWest, NorthWest can be added if needed
+};
+
+// Optional: Helper function declarations (implement in .cpp if uncommented)
+// QString DirectionToString(Direction dir);
+// Direction StringToDirection(const QString& str);
+
 class Creature
 {
 public:
@@ -26,8 +39,8 @@ public:
     void setHealth(int health);
     int getMaxHealth() const;
     void setMaxHealth(int maxHealth);
-    int getDirection() const; 
-    void setDirection(int direction);
+    Direction getDirection() const; 
+    void setDirection(Direction direction);
     int getSpeed() const;
     void setSpeed(int speed);
     bool isNpc() const;
@@ -42,7 +55,7 @@ private:
     // Add member variables for the new properties
     int m_health;
     int m_maxHealth;
-    int m_direction; // Consider an enum for Direction
+    Direction m_direction; // Changed type to Direction enum
     int m_speed;
     bool m_isNpc;
     int m_spawnTime;

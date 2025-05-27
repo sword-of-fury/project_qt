@@ -102,6 +102,97 @@ public:
 
     void loadSprDatFiles(); // New method for loading SPR/DAT files
 
+    // New public methods for actions from MainMenu
+    void generateMap();
+    void closeMap();
+    void importMapFile();
+    void importMonsters();
+    void exportTilesets();
+    void reloadData();
+    void replaceItems();
+    void refreshItems();
+    // toggleBorderSystem(bool) already exists
+    void borderizeSelection();
+    void borderizeMap();
+    void randomizeSelection();
+    void randomizeMap();
+    void mapRemoveUnreachable(); // Corresponds to onMapRemoveUnreachable
+    void clearInvalidHouses();   // Corresponds to onClearHouseTiles
+    void clearMapModifiedState(); // Corresponds to onClearModifiedState
+
+    // New public methods for View menu actions
+    void newView(); // Placeholder for MainMenu::onNewView
+    void newDetachedView(); // Placeholder for MainMenu::onNewDetachedView
+    void takeScreenshot();
+    void toggleShowAllFloors(bool checked);
+    void toggleShowAsMinimap(bool checked);
+    void toggleShowOnlyColors(bool checked);
+    void toggleShowOnlyModified(bool checked);
+    void toggleAlwaysShowZones(bool checked);
+    void toggleExtendedHouseShader(bool checked);
+    void toggleShowTooltips(bool checked);
+    void toggleShowClientBox(bool checked);
+    void toggleGhostItems(bool checked);
+    void toggleGhostHigherFloors(bool checked);
+    void toggleShowShade(bool checked);
+    void toggleShowAnimation(bool checked);
+    void toggleShowLight(bool checked);
+    void toggleShowLightStrength(bool checked);
+    void toggleShowTechnicalItems(bool checked);
+    void toggleShowZones(bool checked);
+    void toggleShowCreatures(bool checked);
+    void toggleShowSpawns(bool checked);
+    void toggleShowSpecialTiles(bool checked);
+    void toggleShowHouses(bool checked);
+    void toggleShowPathing(bool checked);
+    void toggleShowTowns(bool checked);
+    void toggleShowWaypoints(bool checked);
+    void toggleHighlightItems(bool checked);
+    void toggleHighlightLockedDoors(bool checked);
+    void toggleShowWallHooks(bool checked);
+
+    // New public methods for Map menu actions
+    void mapValidateGround();
+
+    // New public methods for Tools menu actions
+    void openTilesetEditor();
+    void selectionToDoodad();
+    // void generateIsland(); // Already exists via onGenerateIsland in MainMenu, connected to MainWindow::generateIsland
+    // void createBorder(); // Already exists via onCreateBorder in MainMenu, connected to MainWindow::createBorder (placeholder)
+
+    // New public methods for Search menu actions
+    void findZones();
+    void findUniqueItems();
+    void findActionIdItems();
+    void findContainers();
+    void findWriteableItems();
+    void findEverythingSpecial();
+
+    // New public methods for Selection menu actions
+    void replaceOnSelection();
+    void findItemOnSelection();
+    void removeItemOnSelection();
+    void findEverythingOnSelection();
+    void findZonesOnSelection();
+    void findUniqueOnSelection();
+    void findActionIdOnSelection();
+    void findContainerOnSelection();
+    void findWriteableOnSelection();
+    void setSelectionMode(int mode);
+
+    // New public methods for Navigate menu actions
+    void gotoPreviousPosition();
+
+    // New public methods for Window menu actions
+    void showMinimap();
+    void newPalette();
+    void selectPalette(const QString& paletteName);
+    void toggleToolbarVisibility(const QString& toolbarName);
+
+    // New public methods for Experimental menu actions
+    void toggleExperimentalFog(bool checked);
+
+
 public slots: // Slots connected to various UI signals or map signals
     // General UI updates
     void updateWindowTitle();
@@ -168,6 +259,7 @@ private:
     QLabel* layerLabel;
     QLabel* selectionLabel;
     QLabel* zoomLabel;
+    QLabel* currentBrushLabel; // This was already added in a previous attempt, ensure it's correct.
     
     // Map data for display in lists
     QList<Item*> loadedItems; // Pointers to all loaded items for the item list

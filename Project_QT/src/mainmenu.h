@@ -55,10 +55,18 @@ private slots:
     void onOpenRecent(); // Submenu handler for recent files
     void onSaveMap();
     void onSaveMapAs();
-    void onImportMap();
-    void onExportMap();
+    // void onImportMap(); // Will be specific, e.g., onImportMapFile
+    // void onExportMap(); // Will be specific, e.g., onExportMinimap
     void onExit();
     void onPreferences(); // Opens preferences dialog
+
+    // New File Menu Slots
+    void onGenerateMap();
+    void onCloseMap();
+    void onImportMapFile(); // For "Import Map..."
+    void onImportMonsters(); // For "Import Monsters/NPC..."
+    void onExportTilesets();
+    void onReloadData();
     
     // Edit Menu Slots
     void onUndo();
@@ -79,6 +87,37 @@ private slots:
     void onToggleStatusBar();
     void onToggleToolbar();
     void onToggleFullscreen(); // From Source/main_menubar.h
+    // New View Menu Slots (consolidating Editor, View, Show from XML)
+    void onNewView();
+    void onNewDetachedView();
+    void onTakeScreenshot();
+    void onToggleShowAllFloors();
+    void onToggleShowAsMinimap();
+    void onToggleShowOnlyColors();
+    void onToggleShowOnlyModified();
+    void onToggleAlwaysShowZones();
+    void onToggleExtendedHouseShader();
+    void onToggleShowTooltips();
+    void onToggleShowClientBox();
+    void onToggleGhostItems();
+    void onToggleGhostHigherFloors();
+    void onToggleShowShade();
+    void onToggleShowAnimation();
+    void onToggleShowLight();
+    void onToggleShowLightStrength();
+    void onToggleShowTechnicalItems();
+    void onToggleShowZones();
+    void onToggleShowCreatures();
+    void onToggleShowSpawns();
+    void onToggleShowSpecialTiles();
+    void onToggleShowHouses();
+    void onToggleShowPathing();
+    void onToggleShowTowns();
+    void onToggleShowWaypoints();
+    void onToggleHighlightItems();
+    void onToggleHighlightLockedDoors();
+    void onToggleShowWallHooks();
+
 
     // Map Menu Slots
     void onMapProperties();
@@ -99,8 +138,19 @@ private slots:
     void onMapCleanup(); // Generic map cleanup dialog (from main_menubar)
     void onMapRemoveDuplicates(); // Removes duplicate items on map
     void onMapValidateGround(); // Validates ground layers
-    void onGenerateIsland(); // Island Generator dialog
+    // void onGenerateIsland(); // Island Generator dialog - This seems to be MAP_GENERATE_ISLAND, not GENERATE_MAP
     void onCreateBorder(); // Open Border Editor
+
+    // New Edit Menu Slots
+    void onReplaceItems();
+    void onRefreshItems();
+    void onToggleBorderAutomagic(); // For "Border Automagic"
+    void onBorderizeSelection();
+    void onBorderizeMap();
+    void onRandomizeSelection();
+    void onRandomizeMap();
+    // onMapRemoveUnreachable, onClearHouseTiles, onClearModifiedState are already present
+
 
     // Tools Menu Slots
     void onBrushTool();
@@ -110,7 +160,8 @@ private slots:
     void onJumpToBrush(); // Jump to a specific brush by name/ID
     void onJumpToItemBrush(); // Jump to a specific item brush (RAW)
     void onSelectionToDoodad(); // Convert selection to a doodad brush
-    void onGenerateMap(); // Original Generate Map option
+    // void onGenerateMap(); // This slot is for File->Generate Map. Tools->Island Generator is onGenerateIsland.
+    void onTilesetEditor(); // Slot for Tools->Tileset Editor
 
     // Network/Live Menu Slots
     void onStartLive(); // Host server
@@ -132,13 +183,147 @@ private:
     QMenu* viewMenu;
     QMenu* mapMenu;
     QMenu* toolsMenu;
-    QMenu* windowMenu; // Original also had "Window" menu for docks/minimap
+    // QMenu* windowMenu; // Will be re-declared for clarity if needed, or used directly.
     QMenu* helpMenu;
+
+    // New Menu Declarations
+    QMenu* searchMenu;
+    QMenu* selectionMenu;
+    QMenu* navigateMenu;
+    QMenu* windowMenu; // Re-affirming for clarity, or create if not yet used.
+    QMenu* experimentalMenu;
+
+    // Submenus for new main menus
+    QMenu* findOnSelectionSubMenu;
+    QMenu* selectionModeSubMenu;
+    QMenu* paletteSubMenu;    // For Window->Palette
+    QMenu* toolbarsSubMenu;   // For Window->Toolbars
+
     QMenu* recentFilesMenu; // Submenu for recent files
+    QMenu* importSubMenu;   // For File->Import
+    QMenu* exportSubMenu;   // For File->Export
+    QMenu* reloadSubMenu;   // For File->Reload
+    QMenu* borderOptionsSubMenu; // For Edit->Border Options
+    QMenu* otherOptionsSubMenu;  // For Edit->Other Options
+
 
     enum { MaxRecentFiles = 10 }; // Max number of recent files to display
     QList<QAction*> recentFileActions; // List of QActions for recent files
     QAction* separatorAction; // Separator between recent files and "Exit"
+
+    // QAction members for new items
+    // File Menu
+    QAction* generateMapAction;
+    QAction* closeMapAction;
+    QAction* importMapAction;      // "Import Map..."
+    QAction* importMonstersAction; // "Import Monsters/NPC..."
+    QAction* exportTilesetsAction;
+    QAction* reloadDataAction;
+
+    // Edit Menu
+    QAction* replaceItemsAction;
+    QAction* refreshItemsAction;
+    QAction* automagicAction;          // "Border Automagic" (checkable)
+    QAction* borderizeSelectionAction;
+    QAction* borderizeMapAction;
+    QAction* randomizeSelectionAction;
+    QAction* randomizeMapAction;
+    // Actions for "Other Options" submenu (already have slots, ensure QAction members if needed for state updates)
+    QAction* removeUnreachableTilesAction; // For MAP_REMOVE_UNREACHABLE_TILES
+    QAction* clearInvalidHousesAction;     // Slot onClearHouseTiles exists
+    QAction* clearModifiedStateAction;   // Slot onClearModifiedState exists
+
+    // View Menu Actions (consolidated)
+    QAction* newViewAction;
+    QAction* newDetachedViewAction;
+    QAction* takeScreenshotAction;
+    QAction* showAllFloorsAction;
+    QAction* showAsMinimapAction;
+    QAction* showOnlyColorsAction;
+    QAction* showOnlyModifiedAction;
+    QAction* alwaysShowZonesAction;
+    QAction* extendedHouseShaderAction;
+    QAction* showTooltipsAction;
+    QAction* showClientBoxAction;
+    QAction* ghostItemsAction;
+    QAction* ghostHigherFloorsAction;
+    QAction* showShadeAction;
+    QAction* showAnimationAction;
+    QAction* showLightAction;
+    QAction* showLightStrengthAction;
+    QAction* showTechnicalItemsAction;
+    QAction* showZonesAction;
+    QAction* showCreaturesAction;
+    QAction* showSpawnsAction;
+    QAction* showSpecialTilesAction;
+    QAction* showHousesAction;
+    QAction* showPathingAction;
+    QAction* showTownsAction;
+    QAction* showWaypointsAction;
+    QAction* highlightItemsAction;
+    QAction* highlightLockedDoorsAction;
+    QAction* showWallHooksAction;
+
+    // Map Menu Actions (if needing explicit members for dynamic updates beyond slots)
+    // QAction* validateGroundAction; // Example if needed
+
+    // Tools Menu Actions
+    QAction* tilesetEditorAction;
+    // QAction* selectionToDoodadAction; // Slot exists, QAction member might not be needed unless state changes
+
+    // Search Menu Actions
+    QAction* findZonesAction;
+    QAction* findUniqueAction;
+    QAction* findActionIdAction; // Renamed from findAction to avoid conflict with QWidget::actions()
+    QAction* findContainerAction;
+    QAction* findWriteableAction;
+    QAction* findEverythingAction;
+
+    // Selection Menu Actions
+    QAction* replaceOnSelectionAction;
+    QAction* findItemOnSelectionAction;
+    QAction* removeItemOnSelectionAction;
+    // Find on Selection Submenu Actions
+    QAction* findEverythingOnSelectionAction;
+    QAction* findZonesOnSelectionAction;
+    QAction* findUniqueOnSelectionAction;
+    QAction* findActionIdOnSelectionAction;
+    QAction* findContainerOnSelectionAction;
+    QAction* findWriteableOnSelectionAction;
+    // Selection Mode Submenu Actions (radio group)
+    QAction* selectModeCompensateAction;
+    QAction* selectModeCurrentAction;
+    QAction* selectModeLowerAction;
+    QAction* selectModeVisibleAction;
+    QActionGroup* selectionModeGroup;
+
+
+    // Navigate Menu Actions
+    QAction* gotoPreviousPositionAction;
+    // Jump to Brush/Item already exist
+
+    // Window Menu Actions
+    QAction* showMinimapAction;
+    QAction* newPaletteAction;
+    // Palette Submenu Actions (radio group)
+    QAction* selectTerrainPaletteAction;
+    QAction* selectDoodadPaletteAction;
+    QAction* selectItemBackgroundPaletteAction; // Renamed from selectItemPalette to avoid conflict
+    QAction* selectCollectionPaletteAction;
+    QAction* selectHousePaletteAction;
+    QAction* selectCreaturePaletteAction;
+    QAction* selectWaypointPaletteAction;
+    QAction* selectRawPaletteAction;
+    QActionGroup* paletteSelectionGroup;
+    // Toolbars Submenu Actions (checkable)
+    QAction* viewBrushesToolbarAction;
+    QAction* viewPositionToolbarAction;
+    QAction* viewSizesToolbarAction;
+    QAction* viewStandardToolbarAction;
+
+    // Experimental Menu Actions
+    QAction* experimentalFogAction;
+
 
     // Map to quickly look up actions by ID if the original system uses specific integer IDs
     // QMap<int, QAction*> actionMap; // Not strictly needed if all actions connected manually
@@ -151,6 +336,12 @@ private:
     void createToolsMenu();
     void createNetworkMenu(); // New, consolidates live editor stuff
     void createHelpMenu();
+    // New menu creation methods
+    void createSearchMenu();
+    void createSelectionMenu();
+    void createNavigateMenu();
+    void createWindowMenu();
+    void createExperimentalMenu();
     // Helper to add recent file entries dynamically
     void updateRecentFilesMenu();
     

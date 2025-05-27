@@ -3,6 +3,7 @@
 #include "itemmanager.h" // For getting item properties (ItemType, draw offsets etc) and sprites
 #include "spritemanager.h" // For raw sprite drawing (GameSprite, etc) and creature sprites.
 #include "creaturemanager.h" // For creature details
+#include <QDebug> // For qDebug output
 
 // Constructor with QPoint
 Tile::Tile(const QPoint& position, QObject* parent)
@@ -10,11 +11,11 @@ Tile::Tile(const QPoint& position, QObject* parent)
       position(position),
       color(Qt::darkGray), // Default background color
       tileState(TILESTATE_NONE),
-      hasCollisionValue(false),
+      mapFlags(TILE_FLAG_NONE), // Initialize with NONE
+      statFlags(0), // Initialize statFlags
       house_id(0),
-      houseExits(nullptr),
-      mapFlags(0),
-      statFlags(0)
+      houseExits(nullptr), // Initialize houseExits
+      hasCollisionValue(false)
 {
     // Items and creatures vectors are default-constructed empty
     // qDebug() << "Tile created at" << position;
@@ -24,8 +25,15 @@ Tile::Tile(const QPoint& position, QObject* parent)
 Tile::Tile(int x, int y, int z, QObject* parent)
     : Tile(QPoint(x, y), parent) // Delegate to QPoint constructor
 {
+    // mapFlags, statFlags, houseExits are initialized by the delegated constructor
     position.setZ(z); // Set the Z/layer
     // qDebug() << "Tile created at" << position.x() << "," << position.y() << "," << position.z();
+}
+
+// Destructor to clean up houseExits
+Tile::~Tile() {
+    delete houseExits;
+    houseExits = nullptr;
 }
 
 // Tile(TileLocation& loc, QObject* parent) from Source, adaptation will need proper Qt struct equivalent for TileLocation
@@ -253,65 +261,73 @@ void Tile::draw(QPainter& painter, const QPointF& offset, double zoom, bool show
     // Now, iterate `itemsToDraw` in desired order and `creatures`.
     // The actual drawing call for each item (Item::draw) will perform the blitting.
 
-    // Example rendering flow:
-    // 1. Fill tile background (handled by `MapTileItem`'s default `cachedPixmap.fill(Qt::transparent)` or solid if no ground).
-    //    Or draw a basic ground tile color/image if present. (If currentTile->hasGround())
-    // 2. Draw ground item if `currentTileData->hasGround()`. This comes from `items` vector.
-    //    It needs to be drawn *first* because other items stack on it.
-    if (hasGround()) {
-        for (const Item& item : items) { // Assuming the first item in the list is the ground tile.
-            if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsGroundTile))) {
-                item.draw(painter, QPointF(0,0), 1.0); // Item::draw must use QPainter.
-                break;
-            }
+    QVector<const Item*> groundItems;
+    QVector<const Item*> normalItems;
+    QVector<const Item*> topItems;
+
+    for (const Item& item : this->items) {
+        if (item.isGroundTile()) {
+            groundItems.append(&item);
+        } else if (item.isAlwaysOnTop()) {
+            topItems.append(&item);
+        } else {
+            normalItems.append(&item);
         }
     }
 
-    // 3. Draw other items from bottom to top of their effective layers/Z-order.
-    // The precise Z-ordering from `MapDrawer::DrawTile` (item `topOrder`, `IsAlwaysOnBottom`, `IsAlwaysOnTop`) needs translation.
-    // A complex item sorting mechanism may be required here if not handled in `MapTileItem::updateCache`'s iteration of layers.
+    // Perform Drawing Passes:
+    // 1. Ground Items
+    // These items conceptually belong to the Ground layer or similar bottom-most visible layer.
+    // The getItemRenderLayer can help determine which specific Layer::Type they map to for visibility.
+    if (mapInstance->getLayer(Layer::Type::Ground)->isVisible()) { // Check general Ground layer visibility
+        for (const Item* item : groundItems) {
+            // Further check if this specific item's conceptual layer is visible, if needed.
+            // For ground items, Layer::Type::Ground is the primary check.
+            item->draw(painter, QPoint(0,0), 1.0);
+        }
+    }
     
-    // For simplified layered drawing for Phase 1: Draw items first, then creatures, from lowest effective layer to highest.
-    // Assuming `Item::draw` handles the scaling with `zoom=1.0` locally and drawing onto `painter`'s `0,0`.
-    for (int z = 0; z < Map::LayerCount; ++z) {
-        Layer::Type currentDrawLayer = static_cast<Layer::Type>(z);
-        if (!mapInstance->getLayer(currentDrawLayer)->isVisible()) continue; // Skip hidden layers.
-
-        QVector<const Item*> itemsOnThisLayer;
-        for (const Item& item : items) {
-            if (getItemRenderLayer(item) == currentDrawLayer) {
-                itemsOnThisLayer.append(&item);
-            }
-        }
-
-        // Sort items within this layer if necessary by their `topOrder` for correct stacking.
-        // For example, if two items on same visual layer, draw smaller `topOrder` first.
-        // std::sort(itemsOnThisLayer.begin(), itemsOnThisLayer.end(), [](const Item* a, const Item* b) { return a->getTopOrder() < b->getTopOrder(); });
-
-        for (const Item* itemPtr : itemsOnThisLayer) {
-            if (itemPtr) { // Check valid pointer.
-                itemPtr->draw(painter, QPointF(0, 0), 1.0); // Item::draw method handles its own drawing logic.
-            }
+    // 2. Normal Items
+    // These items typically belong to Objects, Items, Walls, Effects layers.
+    // The order within normalItems is preserved from this->items for now.
+    // A sort by a 'topOrder' property would happen here if implemented.
+    for (const Item* item : normalItems) {
+        Layer::Type itemLayerType = getItemRenderLayer(*item); // Determine the item's conceptual layer
+        Layer* itemActualLayer = mapInstance->getLayer(itemLayerType);
+        if (itemActualLayer && itemActualLayer->isVisible()) {
+            item->draw(painter, QPoint(0,0), 1.0);
         }
     }
 
-    // 4. Draw Creatures (usually drawn last, on top of all items)
-    if (!creatures.isEmpty()) {
-        Layer* creaturesLayer = mapInstance->getLayer(Layer::Type::Creatures);
-        if (creaturesLayer && creaturesLayer->isVisible()) {
-            for (const Creature* creature : creatures) {
-                if (creature) { // Ensure pointer is valid.
-                    QPixmap creatureSprite = creature->getSprite(); // Get sprite from creature object (delegates to CreatureManager).
-                    if (!creatureSprite.isNull()) {
-                        painter.drawPixmap(0, 0, creatureSprite); // Draw at (0,0) for the tile's space.
-                    }
+    // 3. Top Items
+    // These items are drawn above normal items.
+    // They might belong to various conceptual layers (e.g. Effects, Top)
+    for (const Item* item : topItems) {
+        Layer::Type itemLayerType = getItemRenderLayer(*item);
+        Layer* itemActualLayer = mapInstance->getLayer(itemLayerType);
+        if (itemActualLayer && itemActualLayer->isVisible()) {
+             item->draw(painter, QPoint(0,0), 1.0);
+        }
+    }
+    
+    // 4. Draw Creatures
+    Layer* creaturesLayer = mapInstance->getLayer(Layer::Type::Creatures);
+    if (creaturesLayer && creaturesLayer->isVisible() && !creatures.isEmpty()) {
+        for (const Creature* creature : this->creatures) {
+            if (creature) { // Ensure pointer is valid.
+                // Creature::draw(painter, ...) would be ideal if creatures have complex drawing.
+                // For now, just drawing their sprite:
+                QPixmap creatureSprite = creature->getSprite(); 
+                if (!creatureSprite.isNull()) {
+                    // Assuming creature sprites are drawn at tile origin (0,0) like items.
+                    // Offsets would be handled inside creature->getSprite() or a creature->draw() method.
+                    painter.drawPixmap(0, 0, creatureSprite); 
                 }
             }
         }
     }
 
-    // The logic from `Source/src/tile.cpp::draw` related to collisions (`showCollisions` argument) is moved to `MapTileItem::paint` itself.
-    // Other overlays (tooltips, live cursors, brushes) are handled at `MapView` or `MapScene` level by other `QGraphicsItem`s.
+    // Note: Collision indicators (`showCollisions`) are handled by MapTileItem::paint.
 }
 
 Layer::Type Tile::getItemRenderLayer(const Item& item) const {
@@ -319,13 +335,20 @@ Layer::Type Tile::getItemRenderLayer(const Item& item) const {
     // It maps Item properties from Source/src/item.h to a conceptual `Layer::Type`.
     // It needs to be kept in sync with the `MapDrawer::DrawTile` logic (specifically item filtering logic by draw layer).
     // ItemProperty values correspond to flags/attributes within Item.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsGroundTile))) return Layer::Type::Ground;
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsGroundDetail))) return Layer::Type::GroundDetail; // Assumed from source.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsWall)) || item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsDoor))) return Layer::Type::Walls;
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsEffect))) return Layer::Type::Effects; // From item's ItemType or flag
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsContainer)) || item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsStackable))) return Layer::Type::Objects; // Generic objects on top of ground.
-    // Add more mappings from ItemProperties to Layer::Type here.
-    return Layer::Type::Items; // Default fallback if no specific layer can be determined, or specific for small items.
+    if (item.isGroundTile()) return Layer::Type::Ground; // Updated to use direct method
+    // Assuming ItemProperty enum is still used for other properties if direct methods aren't available for all.
+    if (item.hasProperty(ItemProperty::IsGroundDetail)) return Layer::Type::GroundDetail; 
+    if (item.hasProperty(ItemProperty::IsWall) || item.hasProperty(ItemProperty::IsDoor)) return Layer::Type::Walls;
+    if (item.hasProperty(ItemProperty::IsEffect)) return Layer::Type::Effects; 
+    if (item.isAlwaysOnTop()) return Layer::Type::Top; // Updated to use direct method
+
+    // Default for items that are not specifically ground, wall, effect, or always on top.
+    // These would typically be general objects, containers, stackable items, etc.
+    if (item.hasProperty(ItemProperty::IsContainer) || item.hasProperty(ItemProperty::IsStackable)) return Layer::Type::Objects; 
+    
+    // Fallback layer type for items not matching above categories.
+    // Layer::Type::Items could be a generic layer for miscellaneous items.
+    return Layer::Type::Items; 
 }
 
 
@@ -405,9 +428,24 @@ uint8_t Tile::getMiniMapColor() const {
     // Get minimap color. Prioritize non-transparent items (e.g. ground).
     // Original Tibia rendering chooses topmost visible opaque item for minimap color.
     // Requires ItemManager::getMiniMapColor for the item ID.
-    for (const Item& item : items) {
-        if (ItemManager::getInstance().hasSprite(item.getId())) { // Check if item has a sprite
-            uint8_t color = ItemManager::getInstance().getSpriteManager().getMiniMapColor(item.getId());
+    // Iterate in reverse to get topmost item first.
+    for (int i = items.size() - 1; i >= 0; --i) {
+        const Item& item = items.at(i);
+        // TODO: Need to check if item is visible (e.g. not an effect that shouldn't be on minimap, or based on layer visibility)
+        // This check might be too simple if ItemManager/SpriteManager isn't fully robust yet.
+        if (ItemManager::getInstance().hasSprite(item.getId())) { 
+            // Assuming getSpriteManager() is a valid way to access SpriteManager from ItemManager
+            // This part needs to align with how ItemManager and SpriteManager are structured.
+            // If SpriteManager is a direct singleton: SpriteManager::getInstance().getMiniMapColor(item.getId());
+            // For now, let's assume ItemManager provides a way or SpriteManager is accessible.
+            // This is a placeholder call, actual structure of SpriteManager access might differ.
+            // uint8_t color = ItemManager::getInstance().getSpriteManager().getMiniMapColor(item.getId());
+
+            // Placeholder: Using a dummy call to SpriteManager if available, or just a default
+            // This requires SpriteManager instance and its method. For now, using a simplified check.
+            const SpriteManager& sm = ItemManager::getInstance().getSpriteManager(); // Assuming this getter exists
+            uint8_t color = sm.getMiniMapColor(item.getId());
+
             if (color != 0) return color; // If not fully transparent (0), return it.
         }
     }
@@ -501,8 +539,45 @@ void Tile::getTable() const { /* Impl */ }
 void Tile::hasCarpet() const { /* Impl */ }
 void Tile::getCarpet() const { /* Impl */ }
 void Tile::cleanTables(bool dontdelete) { Q_UNUSED(dontdelete); /* Impl */ }
-void Tile::tableize(Map* mapInstance) { Q_UNUSED(mapInstance); /* Impl */ }
-void Tile::carpetize(Map* mapInstance) { Q_UNUSED(mapInstance); /* Impl */ }
+void Tile::tableize(Map* mapInstance) { Q_UNUSED(mapInstance); /* Stub */ }
+void Tile::carpetize(Map* mapInstance) { Q_UNUSED(mapInstance); /* Stub */ }
+
+bool Tile::hasTable() const {
+    for (const Item& item : items) {
+        if (item.hasProperty(ItemProperty::IsTable)) { // Assuming ItemProperty::IsTable exists
+            return true;
+        }
+    }
+    return false;
+}
+
+Item* Tile::getTable() const {
+    for (const Item& item : items) {
+        if (item.hasProperty(ItemProperty::IsTable)) {
+            return const_cast<Item*>(&item); // Return pointer to item in vector
+        }
+    }
+    return nullptr;
+}
+
+bool Tile::hasCarpet() const {
+    for (const Item& item : items) {
+        if (item.hasProperty(ItemProperty::IsCarpet)) { // Assuming ItemProperty::IsCarpet exists
+            return true;
+        }
+    }
+    return false;
+}
+
+Item* Tile::getCarpet() const {
+    for (const Item& item : items) {
+        if (item.hasProperty(ItemProperty::IsCarpet)) {
+            return const_cast<Item*>(&item);
+        }
+    }
+    return nullptr;
+}
+
 
 bool Tile::hasOptionalBorder() const {
     for (const Item& item : items) {
@@ -558,37 +633,119 @@ uint16_t Tile::getMapFlags() const { return mapFlags; }
 
 void Tile::setStatFlags(uint16_t _flags) { statFlags = _flags; emit changed(); }
 void Tile::unsetStatFlags(uint16_t _flags) { statFlags &= ~_flags; emit changed(); }
-uint16_t Tile::getStatFlags() const { return statFlags; }
+uint16_t Tile::getStatFlags() const { return statFlags; } // Currently not used for much.
 
-bool Tile::isBlockingCreature() const { /* Impl */ return false; }
+// --- Simple/Stubbed Methods ---
+bool Tile::isBlockingCreature() const {
+    // For now, assume creatures are not blocked by default tile properties,
+    // only by specific items that might have IsBlockingCreature property.
+    // Or if the tile itself has a general "block creature" flag (not currently implemented).
+    for (const Item& item : items) {
+        if (item.hasProperty(ItemProperty::IsBlockingCreature)) { // Assuming ItemProperty::IsBlockingCreature
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Tile::isStairs() const {
     for (const Item& item : items) {
-        if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsStairs))) return true;
+        if (item.hasProperty(ItemProperty::IsStairs)) return true; // Assumes ItemProperty::IsStairs exists
     }
     return false;
 }
+
 bool Tile::isLadder() const {
     for (const Item& item : items) {
-        if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsLadder))) return true;
+        if (item.hasProperty(ItemProperty::IsLadder)) return true; // Assumes ItemProperty::IsLadder exists
     }
     return false;
 }
+
+int Tile::getMovementCost() const {
+    // For now, return a default. Later, this could be based on ground item properties.
+    // Or if Tile itself stores a movement cost modifier.
+    return 1; // Default cost
+}
+
+void Tile::setMovementCost(int cost) {
+    // Currently, Tile doesn't have a member to store this.
+    // This can be a stub or log a warning if not implemented.
+    Q_UNUSED(cost);
+    // qDebug() << "Tile::setMovementCost not implemented yet.";
+}
+
+bool Tile::isProtectionZone() const {
+    return (mapFlags & TILE_FLAG_PROTECTIONZONE) != 0;
+}
+
+void Tile::setProtectionZone(bool isPZ) {
+    bool changed_flag = false;
+    if (isPZ) {
+        if (!(mapFlags & TILE_FLAG_PROTECTIONZONE)) {
+            mapFlags |= TILE_FLAG_PROTECTIONZONE;
+            changed_flag = true;
+        }
+    } else {
+        if (mapFlags & TILE_FLAG_PROTECTIONZONE) {
+            mapFlags &= ~TILE_FLAG_PROTECTIONZONE;
+            changed_flag = true;
+        }
+    }
+    if (changed_flag) {
+        emit changed(); // Emit general tile changed signal
+        modify(); // Mark tile as modified for saving
+    }
+}
+
+bool Tile::isNoLogout() const {
+    return (mapFlags & TILE_FLAG_NOLOGOUT) != 0;
+}
+
+void Tile::setNoLogout(bool noLogout) {
+    bool changed_flag = false;
+    if (noLogout) {
+        if (!(mapFlags & TILE_FLAG_NOLOGOUT)) {
+            mapFlags |= TILE_FLAG_NOLOGOUT;
+            changed_flag = true;
+        }
+    } else {
+        if (mapFlags & TILE_FLAG_NOLOGOUT) {
+            mapFlags &= ~TILE_FLAG_NOLOGOUT;
+            changed_flag = true;
+        }
+    }
+    if (changed_flag) {
+        emit changed();
+        modify();
+    }
+}
+
+// Stubs for other property editor methods
+bool Tile::isNoMoveItems() const { return false; /* Stub */ }
+void Tile::setNoMoveItems(bool noMove) { Q_UNUSED(noMove); /* Stub */ }
+bool Tile::isNoMoveCreatures() const { return false; /* Stub */ }
+void Tile::setNoMoveCreatures(bool noMove) { Q_UNUSED(noMove); /* Stub */ }
+bool Tile::isNoSpawn() const { return false; /* Stub */ }
+void Tile::setNoSpawn(bool noSpawn) { Q_UNUSED(noSpawn); /* Stub */ }
+bool Tile::hasCollision() const { return getCollision(); /* Stub, or specific logic if different from getCollision */ }
+
 
 // Helper: Get logical layer for rendering an item based on its properties.
 Layer::Type Tile::getItemRenderLayer(const Item& item) const {
     // This mapping defines drawing order. Lower enum value = drawn first (bottom).
     // Original MapDrawer uses `ItemType` properties.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsGroundTile))) return Layer::Type::Ground;
+    if (item.hasProperty(ItemProperty::IsGroundTile)) return Layer::Type::Ground;
     // GroundDetail might be another explicit ItemProperty or category of small ground items.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsWall))) return Layer::Type::Walls; // Walls might have a specific layer in 3D perspective.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsDoor))) return Layer::Type::Walls; // Doors are usually drawn at wall level.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsTeleport))) return Layer::Type::Objects;
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsMagicField))) return Layer::Type::Effects;
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsAlwaysOnTop))) return Layer::Type::Top;
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsGroundDetail))) return Layer::Type::GroundDetail; // Needs proper property and loading
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsHouse))) return Layer::Type::Objects; // Houses can be complex structures
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsHouseExit))) return Layer::Type::Objects; // House exits can be objects.
-    if (item.hasProperty(static_cast<ItemProperty>(ItemProperty::IsWaypoint))) return Layer::Type::Objects; // Waypoints are usually above objects.
+    if (item.hasProperty(ItemProperty::IsWall)) return Layer::Type::Walls; // Walls might have a specific layer in 3D perspective.
+    if (item.hasProperty(ItemProperty::IsDoor)) return Layer::Type::Walls; // Doors are usually drawn at wall level.
+    if (item.hasProperty(ItemProperty::IsTeleport)) return Layer::Type::Objects;
+    if (item.hasProperty(ItemProperty::IsMagicField)) return Layer::Type::Effects;
+    if (item.hasProperty(ItemProperty::IsAlwaysOnTop)) return Layer::Type::Top;
+    if (item.hasProperty(ItemProperty::IsGroundDetail)) return Layer::Type::GroundDetail; // Needs proper property and loading
+    if (item.hasProperty(ItemProperty::IsHouse)) return Layer::Type::Objects; // Houses can be complex structures
+    if (item.hasProperty(ItemProperty::IsHouseExit)) return Layer::Type::Objects; // House exits can be objects.
+    if (item.hasProperty(ItemProperty::IsWaypoint)) return Layer::Type::Objects; // Waypoints are usually above objects.
 
     // Generic item placement if no specific layer flag is set on item.
     // Determine a sensible default based on `ItemProperty::IsContainer`, `ItemProperty::IsStackable`
@@ -596,12 +753,78 @@ Layer::Type Tile::getItemRenderLayer(const Item& item) const {
     return Layer::Type::Objects;
 }
 
-// Helper: checks an Item's internal properties.
+// Helper: checks an Item's internal properties (currently unused)
 bool Tile::hasPropertyInternal(ItemProperty prop) const {
-    // Iterate through currentTile->items and check `item.hasProperty(prop)`
-    // Not currently used as properties are checked directly from `Item` objects in `Tile::draw` etc.
     Q_UNUSED(prop);
     return false;
+}
+
+uint32_t Tile::cleanInvalidItems() {
+    uint32_t removed_count = 0;
+    QVector<Item> validItems;
+    validItems.reserve(items.size());
+
+    ItemManager& itemManager = ItemManager::getInstance();
+
+    for (const Item& item : items) {
+        if (itemManager.getItemById(item.getId())) { // Check if item type is valid
+            validItems.append(item);
+        } else {
+            removed_count++;
+        }
+    }
+
+    if (removed_count > 0) {
+        items = validItems; // Replace with the filtered list
+        emit itemsChanged();
+        emit changed(); // General tile changed signal
+        // Consider if TILESTATE_MODIFIED needs to be set here
+        // modify(); // If this function implies a user-driven modification that needs saving
+    }
+
+    return removed_count;
+}
+
+uint32_t Tile::cleanDuplicateItems(const std::function<bool(uint16_t)>& isInRanges,
+                                   const std::function<bool(const Item&, const Item&)>& compareItemsFunc) {
+    uint32_t removed_on_this_tile = 0;
+    if (items.isEmpty()) {
+        return 0;
+    }
+
+    QVector<Item> items_to_keep; // Items that are definitely not duplicates and match ranges.
+    QVector<Item> final_items_on_tile; // All items that will remain (including those not in ranges).
+
+    for (const Item& current_item_from_tile : items) {
+        if (!isInRanges(current_item_from_tile.getId())) {
+            final_items_on_tile.append(current_item_from_tile); // Keep if not in specified ranges for cleaning
+            continue;
+        }
+
+        bool is_duplicate = false;
+        for (const Item& kept_item : items_to_keep) {
+            if (compareItemsFunc(current_item_from_tile, kept_item)) {
+                is_duplicate = true;
+                break;
+            }
+        }
+
+        if (!is_duplicate) {
+            items_to_keep.append(current_item_from_tile); // Add to list of unique items within the ranges
+            final_items_on_tile.append(current_item_from_tile); // Add to final list for the tile
+        } else {
+            removed_on_this_tile++;
+        }
+    }
+
+    if (removed_on_this_tile > 0) {
+        items = final_items_on_tile; // Update the tile's items
+        emit itemsChanged();
+        emit changed();
+        // modify(); // Potentially set TILESTATE_MODIFIED if this is a user-driven change needing save
+    }
+
+    return removed_on_this_tile;
 }
 
 

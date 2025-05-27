@@ -60,6 +60,67 @@ public:
     QPoint mapToTile(const QPoint& pos) const;
     QPoint tileToMap(const QPoint& pos) const;
 
+    // View state getters/setters
+    bool getShowGridState() const { return mapScene ? mapScene->getShowGrid() : false; } // From MapScene
+    // void setShowGrid(bool show); // Already exists, delegates to MapScene
+
+    bool getShowCollisionsState() const { return mapScene ? mapScene->getShowCollisions() : false; } // From MapScene
+    // void setShowCollisions(bool show); // Already exists, delegates to MapScene
+
+    bool getShowSpawnsState() const { return m_showSpawns; }
+    void setShowSpawns(bool show);
+    bool getShowAnimationState() const { return m_showAnimation; }
+    void setShowAnimation(bool show);
+    bool getShowLightState() const { return m_showLight; }
+    void setShowLight(bool show);
+    bool getShowAllFloorsState() const { return m_showAllFloors; }
+    void setShowAllFloors(bool show);
+    bool getShowAsMinimapState() const { return m_showAsMinimap; }
+    void setShowAsMinimap(bool show);
+    bool getShowTooltipsState() const { return m_showTooltips; }
+    void setShowTooltips(bool show);
+    bool getShowZonesState() const { return m_showZones; }
+    void setShowZones(bool show);
+    bool getShowPathingState() const { return m_showPathing; }
+    void setShowPathing(bool show);
+    bool getExperimentalFogState() const { return m_experimentalFog; }
+    void setExperimentalFog(bool show);
+    bool getShowOnlyColorsState() const { return m_showOnlyColors; }
+    void setShowOnlyColors(bool show);
+    bool getShowOnlyModifiedState() const { return m_showOnlyModified; }
+    void setShowOnlyModified(bool show);
+    bool getAlwaysShowZonesState() const { return m_alwaysShowZones; }
+    void setAlwaysShowZones(bool show);
+    bool getExtendedHouseShaderState() const { return m_extendedHouseShader; }
+    void setExtendedHouseShader(bool show);
+    bool getShowClientBoxState() const { return m_showClientBox; }
+    void setShowClientBox(bool show);
+    bool getGhostItemsState() const { return m_ghostItems; }
+    void setGhostItems(bool show);
+    bool getGhostHigherFloorsState() const { return m_ghostHigherFloors; }
+    void setGhostHigherFloors(bool show);
+    bool getShowShadeState() const { return m_showShade; }
+    void setShowShade(bool show);
+    bool getShowLightStrengthState() const { return m_showLightStrength; }
+    void setShowLightStrength(bool show);
+    bool getShowTechnicalItemsState() const { return m_showTechnicalItems; }
+    void setShowTechnicalItems(bool show);
+    bool getShowSpecialTilesState() const { return m_showSpecialTiles; }
+    void setShowSpecialTiles(bool show);
+    bool getShowHousesState() const { return m_showHouses; }
+    void setShowHouses(bool show);
+    bool getShowTownsState() const { return m_showTowns; }
+    void setShowTowns(bool show);
+    bool getShowWaypointsState() const { return m_showWaypoints; }
+    void setShowWaypoints(bool show);
+    bool getHighlightItemsState() const { return m_highlightItems; }
+    void setHighlightItems(bool show);
+    bool getHighlightLockedDoorsState() const { return m_highlightLockedDoors; }
+    void setHighlightLockedDoors(bool show);
+    bool getShowWallHooksState() const { return m_showWallHooks; }
+    void setShowWallHooks(bool show);
+
+
     // Selection methods (forward to Map model)
     void clearSelection();
     void selectTile(const QPoint& position);

@@ -1,0 +1,5 @@
+<creatures>
+    <creature name="Rat" id="1" looktype="21" health_max="20" speed="100" is_npc="false" />
+    <creature name="Cave Rat" id="2" looktype="57" health_max="30" speed="110" is_npc="false" />
+    <npc name="Shopkeeper" id="3" looktype="130" lookhead="78" lookbody="69" looklegs="58" lookfeet="76" health_max="100" speed="100" is_npc="true" />
+</creatures>

@@ -99,22 +99,16 @@ When processing this `README.md` and subsequent tasks related to `project_qt`:
 
 1.  **Understand Primary Goal:** Always remember the central objective: **complete migration of `wxwidgets` codebase features to `project_qt` using Qt6 exclusively**, replacing `wxWidgets`, `SFML`, and `ImGui`.
 
-2.  **Refer to "✅ Migration Progress":** The section above, "✅ Migration Progress", contains the **most up-to-date and granular status** of implemented features. It's the definitive "source of truth" for what has been completed, confirmed, and integrated. Always use this section to:
-    *   **Validate completed work:** Do not propose re-implementing anything marked with "✔ COMPLETED."
-    *   **Identify immediate next tasks:** The remaining uncompleted items (if any, typically from subsequent phases outlined in an internal plan) define the priority.
-
-3.  **Use the Master Todo List (Implicitly):** Our shared "Project Todo List" (managed in our conversational history) represents the full breakdown of `Project Roadmap`. Your goal should be to assist in moving through *that list*, typically one numerical task at a time. If asked "what next," derive from that list and prioritize based on foundational dependencies.
-
-4.  **Adopt the "Coder" Role:** Unless explicitly instructed otherwise, assume your role is that of the **"Coder"**. This means:
+2.  **Adopt the "Coder" Role:** Unless explicitly instructed otherwise, assume your role is that of the **"Coder"**. This means:
     *   When given a task, you will provide the **100% functional, ready-to-replace/integrate code.**
     *   You are responsible for identifying all affected files within `project_qt`.
     *   You will provide the **complete, updated content of each affected file.**
     *   **No placeholders** in the code you deliver unless specifically requested for structural demonstration. All migrated logic should be derived directly from `wxwidgets` code (or a functional stub if no `wxwidgets` equivalent exists yet for complex operations).
-    *   After delivering code, **summarize what was done in this step** and **propose the next task from the "Project Todo List."**
+    *   After delivering code, **summarize what was done in this step**.
 
-5.  **Utilize Full Codebase Access:** Leverage your direct access to **both** the `wxwidgets` and `project_qt` directories for deep comparison, understanding architectural nuances, and deriving exact migration logic.
+3.  **Utilize Full Codebase Access:** Leverage your direct access to **both** the `wxwidgets` and `project_qt` directories for deep comparison, understanding architectural nuances, and deriving exact migration logic.
 
-6.  **Seek Clarification:** If any instruction or project detail seems ambiguous, or if there's a contradiction between the `README.md` and past conversation or the code, **always ask for clarification** before proceeding.
+4.  **Seek Clarification:** If any instruction or project detail seems ambiguous, or if there's a contradiction between the `README.md` and past conversation or the code, **always ask for clarification** before proceeding.
 
 
 ---
@@ -171,14 +165,4 @@ Before getting started with project_qt, ensure your runtime environment meets th
 
 ---
 
-## 🎗 License
 
-This project is protected under the [SELECT-A-LICENSE](https://choosealicense.com/licenses) License. For more details, refer to the [LICENSE](https://choosealicense.com/licenses/) file.
-
----
-
-## 🙌 Acknowledgments
-
-- List any resources, contributors, inspiration, etc. here.
-
----

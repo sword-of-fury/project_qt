@@ -76,26 +76,7 @@ This strategic migration prioritizes establishing a single, coherent framework. 
 
 ## ✅ Migration Progress
 
-The `project_qt` codebase reflects an **active and iterative migration process**. Significant architectural shifts have been made, laying a solid foundation for future development. The progress is audited and tracked step-by-step:
-
-**Phase 1: Core Map Rendering & Viewport (Foundation - Replaces SFML)**
-
-1.  **Refactor MapView to fully leverage QGraphicsView & QGraphicsScene.**
-    *   Status: ✔ **COMPLETED.** The core map display is now powered by Qt's `QGraphicsView` (`MapView`) and `QGraphicsScene` (`MapScene`). The foundational drawing pipeline within `MapTileItem::paint()` and `MapTileItem::updateCache()` accurately renders tiles, items, and creatures using `QPainter`, replicating the visual output previously achieved with SFML. This includes correct handling of item Z-ordering/stacking and a robust scene background.
-
-2.  **Migrate Foundational Map Interactions.**
-    *   Status: ✔ **COMPLETED.** Essential user interactions such as smooth map panning (click-and-drag with middle mouse button or Ctrl+Left click) and zooming (mouse wheel) are fully implemented. Initial tile selection and visual feedback, including a responsive `QGraphicsView::RubberBandDrag`, are also functional.
-
-**Phase 2: Core UI Elements & Base Tool Integration (Replaces wxWidgets Shell)**
-
-1.  **Reimplement Right-Click Context Menu in MapView.**
-    *   Status: ✔ **COMPLETED.** A context-sensitive `QMenu` now dynamically appears on right-click within `MapView`. Its content adapts based on the type of map element (tile, item, creature, selection) under the cursor, directly mirroring the contextual options from the original `wxWidgets` menu. Key clipboard operations (Cut, Copy, Paste, Delete) are wired up as `QAction`s dispatching to `MainWindow`'s integrated logic.
-
-2.  **Complete Main Menu, Toolbars, and Status Bar.**
-    *   Status: ✔ **COMPLETED.** The application's `QMainWindow` is fully equipped with a comprehensive `QMenuBar` (`MainMenu`) and `QToolBar` (`MainToolBar`). All original menu actions (File, Edit, View, Map, Tools, Network, Help) and toolbar buttons are present and connected to their respective handler slots in `MainWindow`, enabling or disabling them dynamically based on application state. Layer and zoom controls are functionally integrated into the main toolbar, replacing old `wxWidgets` controls.
-
-3.  **Migrate Basic Brush Types to Full Functionality.**
-    *   Status: ✔ **COMPLETED.** The foundational editing brushes—`NormalBrush` (standard painting), `EraserBrush` (item removal), `FloodFillBrush` (area filling), and `PencilBrush` (line drawing)—have been fully migrated. Their `mousePressEvent`, `mouseMoveEvent`, and `mouseReleaseEvent` handlers accurately apply modifications to the `Map` data, leveraging Qt's `QUndoStack` for comprehensive undo/redo support. Brush previews in `MapView` are also dynamically updated based on the selected brush.
+The `project_qt` codebase reflects an **active and iterative migration process**. Significant architectural shifts have been made, laying a solid foundation for future development. 
 
 ---
 

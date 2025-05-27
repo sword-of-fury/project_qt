@@ -1,0 +1,2 @@
+**Task17: Migrate Selection Class - Add initial functions and structures.**
+- Create basic `Selection` functionality, including internal structure (tile selections set and methods, internal modes), `setSelection` implementation in Map and Select/Deselect commands in mapcanvas for visualization if implemented here, mirroring the original SELECTION flags to avoid selection flickering in visual refresh if using continuous selection bounding box.

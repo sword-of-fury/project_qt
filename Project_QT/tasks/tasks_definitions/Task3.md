@@ -1,0 +1,2 @@
+**Task3: Migrate `wxDC` (Device Context) to `QPainter`**
+-  Task: Replace all drawing operations involving `wxDC` (and derivatives like `wxMemoryDC`, `wxPaintDC`, `wxBufferedPaintDC`) with `QPainter` equivalents in the Qt project, aligning drawing logic with Qt's 2D painting system. Focus on accurate translation of `DrawRectangle`, `DrawLine`, `DrawBitmap`, and text rendering functions. Handle transformations (`SetUserScale`, etc.) appropriately.

@@ -1,0 +1,2 @@
+**Task63: Migrate Waypoints to Qt (`waypoints.h`/cpp) including its interaction in Maps, creating appropriate ui elements for list/edit operations like previously and handling those from main.**
+Make it work with tile location when editing a tile using Tile->setWaypoints using attributes for any waypoint if necessary. Ensure all attributes get stored via Properties. `update()` will need similar signals using an ID or other appropriate system like Tile changed and waypoints using selection mode that needs both selection info update on selection start to handle `set*Waypoint`.

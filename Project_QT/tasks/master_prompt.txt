@@ -1,0 +1,62 @@
+AI Coding Assistant,
+
+We are executing the Qt6 migration for the project at `https://github.com/sword-of-fury/project_qt`. The process is guided by an XML configuration file. This project involves a strict review cycle: after you complete the code for each task, you will provide Git commands. I will execute these, push to a new branch on GitHub, and review. You will then wait for my approval.
+
+**Authoritative Instruction Document:**
+All tasks and workflow are defined in the XML file located at: `./tasks/migration_tasks_config.xml`
+You MUST parse and strictly follow this document from its location within the 'tasks' folder.
+
+**Project Structure (as defined in `migration_tasks_config.xml`):**
+*   Original wxWidgets code is in: `./wxwidgets`
+*   New Qt6 project code will be placed in: `./Project_QT/src`
+
+**Your Role and Core Directives (from `migration_tasks_config.xml`):**
+1.  You are the **Coder**. I am the **Auditor & Reviewer**.
+2.  Adhere to all `<core_coding_mandates>` within `./tasks/migration_tasks_config.xml`.
+3.  Reference original code from `./wxwidgets` as needed for each task.
+
+**Interactive Workflow per Task:**
+1.  **Identify Current Task:**
+    *   Consult `./tasks/migration_tasks_config.xml` and identify the task specified in `<execution_control><current_task_id>`.
+    *   Announce: "STARTING TASK: [Task ID] - [Task Description]"
+2.  **Generate Code:**
+    *   If the task description in `migration_tasks_config.xml` implies complex details, you may conceptually refer to a corresponding `[TaskID_Description].md` file (e.g., `Task1_Migrate_wxImage_to_QImage.md`) located within the `./tasks/task_definitions/` folder for deeper understanding. However, your primary instruction for *what* to do is the task description from `migration_tasks_config.xml`.
+    *   Produce the complete, functional Qt6 code required to fulfill this task.
+    *   **Ensure all new/modified code is structured to be placed within the `./Project_QT/src` directory.**
+3.  **Generate Git Branching & Commit Commands:**
+    *   After the code, generate the sequence of Git commands for me to execute.
+    *   The branch name should be descriptive, e.g., `feature/task-<ID>-<short-description>` (e.g., `feature/task-1-wximage-to-qimage`).
+    *   The commands should reflect operations within our project structure:
+        a.  Ensure I'm on the main development branch (e.g., `git checkout main` or per `<git_repository_details><main_branch>` in `migration_tasks_config.xml`).
+        b.  Pull the latest changes (`git pull origin <main_branch>`).
+        c.  Create the new feature branch (`git checkout -b feature/task-ID-description`).
+        d.  Add all new/modified files *within* `./Project_QT/src` relevant to THIS task (e.g., `git add ./Project_QT/src/...`). Be specific.
+        e.  Commit the changes with a clear message (e.g., `git commit -m "feat(TaskID): Implement [Task Description]"`).
+        f.  Suggest pushing the new branch (`git push -u origin feature/task-ID-description`).
+4.  **Pause and Await Review:**
+    *   After providing the code AND the Git commands, you MUST state:
+        `"CODE AND GIT COMMANDS FOR [Task ID] - [Task Description] GENERATED. REPO: https://github.com/sword-of-fury/project_qt. PLEASE EXECUTE GIT COMMANDS, PUSH THE BRANCH, CREATE A PULL REQUEST (IF APPLICABLE), AND REVIEW. WAITING FOR APPROVAL ('APPROVED:[TaskID]') OR REWORK INSTRUCTIONS ('REWORK:[TaskID] [Your feedback here]')."`
+    *   You will then STOP and wait for my next input.
+5.  **Process My Feedback:**
+    *   **If I send `APPROVED:[TaskID]`:**
+        a.  Acknowledge completion of the approved task.
+        b.  Prepare to work on the next PENDING task from `./tasks/migration_tasks_config.xml` (I will have updated `current_task_id` in the file for you to consult on the next cycle).
+        c.  If all tasks are completed, proceed to step 6.
+    *   **If I send `REWORK:[TaskID] [My specific feedback]`:**
+        a.  Acknowledge: "UNDERSTOOD. REWORKING TASK: [Task ID] BASED ON FEEDBACK."
+        b.  Re-do the code generation (Step 2) for THE SAME `[TaskID]`, incorporating my feedback. Ensure output is for `./Project_QT/src`.
+        c.  Re-generate Git commands (Step 3) for the existing feature branch (amend or new commit, please clarify for me).
+        d.  Pause again (Step 4).
+6.  **Project Completion:**
+    *   When you have processed my `APPROVED:[TaskID]` for the final task (Task100), and thus all tasks in `./tasks/migration_tasks_config.xml` are conceptually 'COMPLETED', your final output MUST be:
+        `"---ALL TASKS FROM migration_tasks_config.xml COMPLETED AND APPROVED. MIGRATION FINISHED FOR REPO https://github.com/sword-of-fury/project_qt.---"`
+
+**Managing My Role (The User):**
+*   After you provide code and Git commands and pause:
+    1.  I execute the Git commands.
+    2.  I push the branch to `https://github.com/sword-of-fury/project_qt` and review.
+    3.  I update `./tasks/migration_tasks_config.xml` (status, `current_task_id`, counts).
+    4.  I send `APPROVED:[TaskID]` or `REWORK:[TaskID] [feedback]` as the next prompt to you.
+
+**Let's Begin:**
+Parse `./tasks/migration_tasks_config.xml`. Identify the task specified in `<execution_control><current_task_id>` and start processing it according to this workflow.

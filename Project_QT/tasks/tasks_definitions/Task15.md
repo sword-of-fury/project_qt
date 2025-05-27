@@ -1,0 +1,2 @@
+**Task15: Create Basic `Creature` Class in Qt**
+- Migrate the `Creature` class itself, mirroring the structure and core functionalities, basic setters/getters, name from `wxwidgets::creature.cpp/h`. For sprite access, forward declarations only for `SpriteManager` type information. It will eventually integrate fully via `SpriteManager` after `GameSprite`, but should retain data like lookType if this changes on instance basis per creature, ensuring the getters/setters themselves are implemented but with placeholder effects if dependent classes are not in project_qt.

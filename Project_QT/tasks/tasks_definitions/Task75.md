@@ -1,0 +1,2 @@
+**Task75: Update MapView properties for drawing states (those like 'ghost_items', 'show_zones')**
+based on their implementation from source for proper functionality (`OnChangeViewSettings`) and interaction between view style settings and item type rendering rather than those tiles changing based on them for now if MapScene keeps a separate visual element based representation similar to wxwidgets mapView unless these are now attributes on the Tile/item from other Brush-property based tiles that DrawingOptions uses.

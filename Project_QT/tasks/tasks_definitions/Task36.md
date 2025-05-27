@@ -1,0 +1,2 @@
+**Task36: Migrate core `Brushes` interface from `brush.h` using std::shared_ptr**
+- Create a common brush interface (like Brush with an essential draw and canDraw methods to make drawing logic unified based on Item/Tile/parameters used rather than individual operations across Item->create method/wall automagic. Each type uses draw and Brush::ItemType or internal structure to create appropriate item on Tile.

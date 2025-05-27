@@ -1,0 +1,2 @@
+**Task54: Finalize Item Rendering (Integrate Sprites)**
+Implement full sprite integration, using Sprites, Item sprites/info to draw the entire structure based on its layers (using either internal caches like MapTiles seem to do when created for any items, including walls, other floors with that Tile location having items or just the actively displayed one by Item rather than layer based logic on Tiles, with Draw ensuring they are set to the right spot and are filtered based on zoom in `drawTilesContentToCache`).

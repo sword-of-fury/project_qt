@@ -1,3 +1,5 @@
+
+
 <div align="left">
     <img src="https://img.icons8.com/?size=512&id=55494&format=png" width="40%" align="left" style="margin-right: 15px"/>
     <div style="display: inline-block;">
@@ -76,7 +78,7 @@ This strategic migration prioritizes establishing a single, coherent framework. 
 
 ## ✅ Migration Progress
 
-The `project_qt` codebase reflects an **active and iterative migration process**. Significant architectural shifts have been made, laying a solid foundation for future development. 
+The `project_qt` codebase reflects an **active and iterative migration process**. Significant architectural shifts have been made, laying a solid foundation for future development.
 
 ---
 
@@ -85,41 +87,55 @@ The `project_qt` codebase reflects an **active and iterative migration process**
 The project's code is organized into two primary directories, reflecting the migration:
 
 ```sh
-└── project_qt/                   # Root directory of the repository
-    ├── Project_QT/                  # The new, actively developed Qt6-based project codebase
-    └── wxwidgets						# Old, wxwidgets	project.
-
+└── your_project_root/            # Assumed root directory for this context
+    ├── Project_QT/               # The new, actively developed Qt6-based project codebase
+    │   └── src/                  # Source files for the Qt6 project
+    ├── wxwidgets/                # Original C++ codebase using wxWidgets, SFML, ImGui
+    └── tasks/                    # Folder containing AI-assisted migration instructions and configurations
+        ├── migration_tasks_config.xml # Authoritative task list and configuration for AI
+        ├── master_prompt.txt        # Primary operational prompt for the AI assistant
+        └── task_definitions/        # (Optional) Detailed markdown files for specific complex tasks
 ```
+*(Note: Only key migration-relevant directories shown above for brevity. Refer to actual repository for full structure.)*
+
+---
 
 ## 📌 Project Roadmap (For AI Interpretation)
 
-This section serves as a direct instruction to any AI assistant analyzing this `README.md` file. It outlines the current project strategy and how to interact with the project context.
+This section provides general guidance for any AI assistant analyzing this `README.md` file. It outlines the current project strategy. For **detailed operational instructions, task lists, and specific interaction protocols, refer to the files within the `./tasks/` directory.**
 
 When processing this `README.md` and subsequent tasks related to `project_qt`:
 
 1.  **Understand Primary Goal:** Always remember the central objective: **complete migration of `wxwidgets` codebase features to `project_qt` using Qt6 exclusively**, replacing `wxWidgets`, `SFML`, and `ImGui`.
 
-2.  **Adopt the "Coder" Role:** Unless explicitly instructed otherwise, assume your role is that of the **"Coder"**. This means:
-    *   When given a task, you will provide the **100% functional, ready-to-replace/integrate code.**
-    *   You are responsible for identifying all affected files within `project_qt`.
-    *   You will provide the **complete, updated content of each affected file.**
-    *   **No placeholders** in the code you deliver unless specifically requested for structural demonstration. All migrated logic should be derived directly from `wxwidgets` code (or a functional stub if no `wxwidgets` equivalent exists yet for complex operations).
-    *   After delivering code, **summarize what was done in this step**.
+2.  **Adopt the "Coder" Role:** Unless explicitly instructed otherwise by files in the `./tasks/` folder, assume your role is that of the **"Coder"**. This implies:
+    *   Delivering **100% functional, ready-to-integrate code.**
+    *   Identifying all affected files within `project_qt`.
+    *   Providing **complete, updated content of each affected file.**
+    *   **No placeholders** in the code you deliver unless specifically requested. All migrated logic should be derived directly from `wxwidgets` code.
+    *   Summarizing work done after delivering code.
 
-3.  **Utilize Full Codebase Access:** Leverage your direct access to **both** the `wxwidgets` and `project_qt` directories for deep comparison, understanding architectural nuances, and deriving exact migration logic.
+3.  **Utilize Full Codebase Access (Conceptual):** Leverage conceptual access to both the `wxwidgets` and `project_qt` directories for deep comparison, understanding architectural nuances, and deriving exact migration logic.
 
-4.  **Seek Clarification:** If any instruction or project detail seems ambiguous, or if there's a contradiction between the `README.md` and past conversation or the code, **always ask for clarification** before proceeding.
+4.  **Seek Clarification:** If any instruction or project detail seems ambiguous, or if there's a contradiction, **always ask for clarification** before proceeding, prioritizing instructions found within the `./tasks/` folder.
 
+5.  **Authoritative AI Instructions:** For specific task execution, Git workflow, the active task list, and detailed interaction protocols, you **MUST** refer to and prioritize the files within the `./tasks/` directory, specifically:
+    *   `./tasks/migration_tasks_config.xml`: This is your primary task list and configuration data.
+    *   `./tasks/master_prompt.txt`: This contains your overarching operational instructions and workflow.
 
 ---
 ## 🚀 Getting Started
 
 ### ☑️ Prerequisites
 
-Before getting started with project_qt, ensure your runtime environment meets the following requirements:
+Before getting started with `Project_QT`, ensure your runtime environment meets the following requirements:
 
-- **Programming Language:** C
-- **Package Manager:** Cmake
+- **Programming Language:** C++ (typically C++17 or newer for Qt6)
+- **Qt Version:** Qt6 (e.g., Qt 6.2 or later)
+- **Build System:** CMake (e.g., version 3.16 or newer)
+- **Compiler:** A modern C++ compiler (e.g., GCC, Clang, MSVC) compatible with your Qt6 installation.
+
+*(Detailed setup instructions for Qt and specific dependencies can be found within the `Project_QT` directory or its own README if available).*
 
 ---
 
@@ -132,32 +148,32 @@ Before getting started with project_qt, ensure your runtime environment meets th
 <details closed>
 <summary>Contributing Guidelines</summary>
 
-1. **Fork the Repository**: Start by forking the project repository to your github account.
-2. **Clone Locally**: Clone the forked repository to your local machine using a git client.
+1. **Fork the Repository**: Start by forking the project repository to your GitHub account.
+2. **Clone Locally**: Clone the forked repository to your local machine using a Git client.
    ```sh
-   git clone https://github.com/sword-of-fury/project_qt
+   git clone https://github.com/sword-of-fury/project_qt.git
    ```
 3. **Create a New Branch**: Always work on a new branch, giving it a descriptive name.
    ```sh
-   git checkout -b new-feature-x
+   git checkout -b feature/your-descriptive-feature-name
    ```
 4. **Commit Your Changes**: Commit with a clear message describing your updates.
    ```sh
-   git commit -m 'Implemented new feature x.'
+   git commit -m 'feat: Implement new feature x for project_qt'
    ```
-5. **Push to github**: Push the changes to your forked repository.
+5. **Push to GitHub**: Push the changes to your forked repository.
    ```sh
-   git push origin new-feature-x
+   git push origin feature/your-descriptive-feature-name
    ```
-6. **Submit a Pull Request**: Create a PR against the original project repository. Clearly describe the changes and their motivations.
-7. **Review**: Once your PR is reviewed and approved, it will be merged into the main branch. Congratulations on your contribution!
+6. **Submit a Pull Request**: Create a PR against the `main` branch (or other designated integration branch) of the original `sword-of-fury/project_qt` repository. Clearly describe the changes and their motivations.
+7. **Review**: Once your PR is reviewed and approved, it will be merged. Congratulations on your contribution!
 </details>
 
 <details closed>
 <summary>Contributor Graph</summary>
 <br>
 <p align="left">
-   <a href="https://github.com{/sword-of-fury/project_qt/}graphs/contributors">
+   <a href="https://github.com/sword-of-fury/project_qt/graphs/contributors">
       <img src="https://contrib.rocks/image?repo=sword-of-fury/project_qt">
    </a>
 </p>

@@ -1,0 +1,2 @@
+**Task5: Refactor events for Mouse position and wheel.**
+- Migrate the basic mouse event handling (position updates, wheel events for zoom) from wxWidgets' `wxMouseEvent`, `wxMouseWheelEvent`, and related methods (e.g., `ScreenToMap`, `GetViewSize`) to their corresponding Qt counterparts (`QMouseEvent`, `QWheelEvent`) and their appropriate handlers, integrating seamlessly with Qt's event model and the existing project structure in `MapView`.  Ensure proper coordinate translation using `mapToScene`, `mapFromScene`.

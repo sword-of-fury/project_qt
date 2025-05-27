@@ -1,0 +1,2 @@
+**Task20: Initial Waypoint Class Migration and Storage.**
+- Start initial waypoints data handling and its basic brush/selector creation in Qt project, storing data (`waypoint.h`) to preserve existing behavior and make later reintegration more manageable with a UI panel later. Maintain only Waypoint data types, core functionality. Later these will integrate with `Tileset`/`Brush`. Ensure proper saving to .xml (custom format from original or adapt a simpler system using existing Map/Tileset format when that is ready).

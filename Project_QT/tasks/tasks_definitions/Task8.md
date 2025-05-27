@@ -1,0 +1,2 @@
+**Task8: Full wxMenuBar to QMenuBar Implementation**
+-  Migrate `MainMenu` using `QMenuBar`, `QMenu`, and `QAction`.  Connect menu actions to existing (or stub) slots in `MainWindow` for future functionality using Qt's signal/slot mechanism for all menu items (file, edit, view, map, tools, about/help), prioritizing the `MenuBar::ActionID` structure for `QAction` object names in `MainMenu` if direct lookup or identification from action IDs is intended.

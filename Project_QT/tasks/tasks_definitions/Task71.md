@@ -1,0 +1,2 @@
+**Task71: Implement `Waypoints` system.**
+Migrate the waypoints related actions and update related functionalities with a dedicate panel or section if appropriate for those on some properties menu (in main window if thats a common "map view setting", for example for find, replace, borderize).  Tie these to minimap/selection markers if it had display components there from how minimap or `Map` managed that before.

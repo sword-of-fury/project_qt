@@ -1,0 +1,2 @@
+**Task45: Create ItemPropertyEditorBase and Subclasses.**
+- Create an abstract `ItemPropertyEditorBase` class with necessary methods (e.g., setProperty, getProperty), derive Qt classes `ItemPropertyEditor` and `OldPropertiesWindow` from this. Properly handle property edits through the GUI as it is updated using property states for attributes, any associated text/names based on existing types/selection states for properties editor similar to previous version.

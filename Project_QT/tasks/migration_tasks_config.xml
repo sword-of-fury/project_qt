@@ -1,0 +1,163 @@
+<project_migration_tasks>
+
+  <header>
+    <title>Project Migration to Qt6 Framework - Task-Based Execution with Review</title>
+    <auditor>User (Hiring Manager & Reviewer)</auditor>
+    <coder>Gemini Pro 2.5 AI Coding Assistant</coder>
+    <date_issued>2023-10-27</date_issued> <!-- Replace with actual current date -->
+    <version>1.3</version> <!-- Reflects use of task_definitions -->
+  </header>
+
+  <introduction_and_setup>
+    <greeting>
+      Hello Gemini Pro 2.5! We're migrating to Qt6 with a task-based approach, incorporating code review via GitHub branches after each task.
+      I am the Auditor & Reviewer. Your role is the Coder.
+    </greeting>
+    <project_paths>
+      <old_source_code_location>./wxwidgets</old_source_code_location>
+      <new_qt6_project_code_location>./Project_QT/src</new_qt6_project_code_location>
+    </project_paths>
+    <git_repository_details>
+        <repository_url>https://github.com/sword-of-fury/project_qt</repository_url>
+        <main_branch>main</main_branch> <!-- Confirm this is your main development branch name -->
+        <remote_name>origin</remote_name>
+    </git_repository_details>
+    <core_coding_mandates>
+      <mandate id="M1">Provide all functional Qt6 code for the current task.</mandate>
+      <mandate id="M2">100% complete and functional code for the current task. No snippets.</mandate>
+      <mandate id="M3">All Qt6 code in `<new_qt6_project_code_location>` (i.e., `./Project_QT/src`).</mandate>
+      <mandate id="M4">Target Qt6, adhere to best practices.</mandate>
+      <mandate id="M5">Reference `<old_source_code_location>` (i.e., `./wxwidgets`) for original code.</mandate>
+    </core_coding_mandates>
+  </introduction_and_setup>
+
+  <task_list>
+    <!--
+      Status progression: PENDING -> IN_PROGRESS -> PENDING_REVIEW -> COMPLETED / REWORK_REQUESTED -> (back to IN_PROGRESS if rework) -> PENDING_REVIEW -> COMPLETED
+    -->
+    <task id="Task1" status="PENDING" description="Migrate `wxImage` to `QImage`."/>
+    <task id="Task2" status="PENDING" description="Migrate wxBitmap to QPixmap."/>
+    <task id="Task3" status="PENDING" description="Migrate `wxDC` (Device Context) to `QPainter`."/>
+    <task id="Task4" status="PENDING" description="Basic `wxPanel` to `QWidget` Transition (Containers)."/>
+    <task id="Task5" status="PENDING" description="Refactor events for Mouse position and wheel."/>
+    <task id="Task6" status="PENDING" description="Brush class transition."/>
+    <task id="Task7" status="PENDING" description="Refactor basic wxDialog classes to QDialog."/>
+    <task id="Task8" status="PENDING" description="Full wxMenuBar to QMenuBar Implementation."/>
+    <task id="Task9" status="PENDING" description="QToolBar Conversion for MainToolbar."/>
+    <task id="Task10" status="PENDING" description="Migrate wxAuiManager docking for palettesminimappropertiesetc."/>
+    <task id="Task11" status="PENDING" description="Implement `Map` Data Structure in Qt."/>
+    <task id="Task12" status="PENDING" description="Port `Tile` class to Qt."/>
+    <task id="Task13" status="PENDING" description="Migrate Item class properties & structure."/>
+    <task id="Task14" status="PENDING" description="Create `ItemManager` in Qt (Core Structure)."/>
+    <task id="Task15" status="PENDING" description="Create Basic `Creature` Class in Qt."/>
+    <task id="Task16" status="PENDING" description="Migrate CreatureManager basic file handling."/>
+    <task id="Task17" status="PENDING" description="Migrate Selection Class - Add initial functions and structures."/>
+    <task id="Task18" status="PENDING" description="Migrate `Automagic_Settings` - Set Up Initial Interface and Links."/>
+    <task id="Task19" status="PENDING" description="Port wxwidgets Spawn code to Project_QT and adjust links."/>
+    <task id="Task20" status="PENDING" description="Initial Waypoint Class Migration and Storage."/>
+    <task id="Task21" status="PENDING" description="Implement Core ClipboardData Functionality."/>
+    <task id="Task22" status="PENDING" description="Migrate Tile drawing function."/>
+    <task id="Task23" status="PENDING" description="Finish `MapTileItem` drawing and logic."/>
+    <task id="Task24" status="PENDING" description="Integrate Item's Type System with ItemManager."/>
+    <task id="Task25" status="PENDING" description="Create Basic Sprite Class in Qt."/>
+    <task id="Task26" status="PENDING" description="Create EditorSprite and its initial renderer."/>
+    <task id="Task27" status="PENDING" description="Create Initial `GameSprite` class."/>
+    <task id="Task28" status="PENDING" description="Add Initial Placeholder Renderers (Map, Tile, Item)."/>
+    <task id="Task29" status="PENDING" description="Begin Transition of Key Event Handling in MapCanvas and Menus."/>
+    <task id="Task30" status="PENDING" description="Replace wxStatusBar to Qt and simplify."/>
+    <task id="Task31" status="PENDING" description="Migrate `dc_button.h` to `QPushButton` subclass and implement `onClick`."/>
+    <task id="Task32" status="PENDING" description="Implement `ResourceManager` in Qt (Complete)."/>
+    <task id="Task33" status="PENDING" description="Create `BrushManager` in Qt."/>
+    <task id="Task34" status="PENDING" description="Brush interaction structure and helpers."/>
+    <task id="Task35" status="PENDING" description="Begin Implementing `SpriteManager` (Loaders)."/>
+    <task id="Task36" status="PENDING" description="Migrate core `Brushes` interface from `brush.h` using stdshared_ptr."/>
+    <task id="Task37" status="PENDING" description="Implement `TerrainBrush` (Base for Terrain Types)."/>
+    <task id="Task38" status="PENDING" description="Migrate `GroundBrush` (Terrain Subtype)."/>
+    <task id="Task39" status="PENDING" description="Implement `WallBrush` (Another Terrain Subtype)."/>
+    <task id="Task40" status="PENDING" description="Implement `WallDecorationBrush`."/>
+    <task id="Task41" status="PENDING" description="Implement `AutoBorder` in Qt."/>
+    <task id="Task42" status="PENDING" description="Migrate TableBrush."/>
+    <task id="Task43" status="PENDING" description="Migrate `CarpetBrush`."/>
+    <task id="Task44" status="PENDING" description="Implement `OptionalBorderBrush`."/>
+    <task id="Task45" status="PENDING" description="Create ItemPropertyEditorBase and Subclasses."/>
+    <task id="Task46" status="PENDING" description="Refactor MainToolBar UI Using QToolBar (Enhanced Features)."/>
+    <task id="Task47" status="PENDING" description="Brush Panel Cleanup and Efficiency."/>
+    <task id="Task48" status="PENDING" description="Finish remaining ItemAttributesItems."/>
+    <task id="Task49" status="PENDING" description="Basic `TilePropertyEditor` Migration."/>
+    <task id="Task50" status="PENDING" description="Implement ReplaceItemsDialog (Find Similar)."/>
+    <task id="Task51" status="PENDING" description="Data Serialization for `Map` (OTBMXMLJSON)."/>
+    <task id="Task52" status="PENDING" description="Integrate Automagic Borders with Qt's Rendering System."/>
+    <task id="Task53" status="PENDING" description="Migrate remaining Brush types to Qt (Carpet, Table, Creature, Spawn, etc.)."/>
+    <task id="Task54" status="PENDING" description="Finalize Item Rendering (Integrate Sprites)."/>
+    <task id="Task55" status="PENDING" description="Add Support for Attributes Map (Advanced Properties)."/>
+    <task id="Task56" status="PENDING" description="Implement Remaining Specialized Brushes (House, HouseExit, Waypoint)."/>
+    <task id="Task57" status="PENDING" description="Migrate `FlagBrush` (Zones)."/>
+    <task id="Task58" status="PENDING" description="Implement Custom `QGraphicsItems` (Selection, Waypoint, Spawn, ItemCreature on MapTileItem)."/>
+    <task id="Task59" status="PENDING" description="Create Item Finders to replace functionality."/>
+    <task id="Task60" status="PENDING" description="Implement File Handling and Version Conversion for `Map` (OTBM)."/>
+    <task id="Task61" status="PENDING" description="Integrate Tile Selection in `MapView`."/>
+    <task id="Task62" status="PENDING" description="Full Migration of wxFrame, menus, and wxAUI (if used) to Qt Main Window and related panels."/>
+    <task id="Task63" status="PENDING" description="Migrate Waypoints to Qt (`waypoints.h`cpp) including its interaction in Maps, creating appropriate ui elements for listedit operations like previously and handling those from main."/>
+    <task id="Task64" status="PENDING" description="Move all Item Properties Loading from `Items` into `SpriteManager` (from `.dat`, or derive a combined `Items` manager if it also holds `ItemType`game information to ensure sprite IDs etc. remain consistent.)."/>
+    <task id="Task65" status="PENDING" description="Implement and test basic drawing code conversion into map display or its QGraphicsItem to start replacing custom graphics into sfShape methods."/>
+    <task id="Task66" status="PENDING" description="Migrate House and Town Handling (Including XML)."/>
+    <task id="Task67" status="PENDING" description="Add Tileset Management to the `ResourceManager` or create appropriate handlers to access and link both items in the correct order."/>
+    <task id="Task68" status="PENDING" description="Create Find Item Dialog (Qt Version) including Browse Tile and functionality from Find Similar."/>
+    <task id="Task69" status="PENDING" description="Integrate Selection Transformation Commands (Move, Rotate, Flip)."/>
+    <task id="Task70" status="PENDING" description="Finish Tileset implementations like creating visual panels for Tile, Ground."/>
+    <task id="Task71" status="PENDING" description="Implement `Waypoints` system."/>
+    <task id="Task72" status="PENDING" description="Migrate OTBM savingloading part of `IOTibiaMap`."/>
+    <task id="Task73" status="PENDING" description="Port House and related operations using new system."/>
+    <task id="Task74" status="PENDING" description="Port Waypoint drawing code, and functionality for clicking."/>
+    <task id="Task75" status="PENDING" description="Update MapView properties for drawing states (those like 'ghost_items', 'show_zones')."/>
+    <task id="Task76" status="PENDING" description="Finish GraphicsSpriteRendering Integration."/>
+    <task id="Task77" status="PENDING" description="Update StatusToolbar for Action IDs for items when drawing."/>
+    <task id="Task78" status="PENDING" description="Migrate Remaining Dialogs and Windows (Advanced Features)."/>
+    <task id="Task79" status="PENDING" description="Implement remaining selection tool features (actions, signals, copycutpaste commands)."/>
+    <task id="Task80" status="PENDING" description="Port Map Display functions."/>
+    <task id="Task81" status="PENDING" description="Complete Brush LoadingSaving (XMLJSON)."/>
+    <task id="Task82" status="PENDING" description="Migrate and Enhance Search Functionality (Including ReplaceFind)."/>
+    <task id="Task83" status="PENDING" description="Enhance Rendering LOD, Lighting, Transparency."/>
+    <task id="Task84" status="PENDING" description="Implement Map Loaders and Converters."/>
+    <task id="Task85" status="PENDING" description="Implement Tile Locking Mechanism."/>
+    <task id="Task86" status="PENDING" description="Migrate and Refactor the `Town` and `House` System (Enhanced)."/>
+    <task id="Task87" status="PENDING" description="Complete Creature and Spawn Integration (Sprites, Attributes)."/>
+    <task id="Task88" status="PENDING" description="Create `ProgressDialog` using QProgressDialog and adapt usages."/>
+    <task id="Task89" status="PENDING" description="Migrate Replace Item Functionality."/>
+    <task id="Task90" status="PENDING" description="Add Minimap functionality."/>
+    <task id="Task91" status="PENDING" description="Migrate or recreate TilesetWindows functionality."/>
+    <task id="Task92" status="PENDING" description="Port SpawnItem code from Map Display."/>
+    <task id="Task93" status="PENDING" description="Create Project_QT Tile property dialog."/>
+    <task id="Task94" status="PENDING" description="Implement and Integrate the `Houses` and `Towns` System."/>
+    <task id="Task95" status="PENDING" description="Complete and Refine `SelectionBrush` (Including Transformations)."/>
+    <task id="Task96" status="PENDING" description="Implement Key Forwarding, Navigation, and Input Handling for All PalettesDialog Controls."/>
+    <task id="Task97" status="PENDING" description="Integrate Application Settings and Preferences (Persistence)."/>
+    <task id="Task98" status="PENDING" description="Migrate 'Ground Border Tool' Automagic."/>
+    <task id="Task99" status="PENDING" description="Migrate any features that network messaging in LiveSocket requires in Qt."/>
+    <task id="Task100" status="PENDING" description="Refactor, Optimize, Test, and Finalize."/>
+  </task_list>
+
+  <execution_control>
+    <current_task_id>Task1</current_task_id>
+    <total_tasks>100</total_tasks>
+    <processed_for_review_count>0</processed_for_review_count>
+    <approved_and_merged_count>0</approved_and_merged_count>
+  </execution_control>
+
+  <workflow_instructions>
+    <step name="TaskSelection">AI identifies the `<current_task_id>` from this XML file.</step>
+    <step name="CodeGeneration">AI generates Qt6 code for the task, referencing `./tasks/task_definitions/[TaskID_Desc].md` if complex, and places it in `./Project_QT/src`.</step>
+    <step name="GitCommandGeneration">AI generates Git commands to create a feature branch, add files from `./Project_QT/src`, commit, and suggest pushing.</step>
+    <step name="PauseForReview">AI pauses and waits for user to execute Git commands, push, and review the code on GitHub.</step>
+    <step name="UserReviewAction">User reviews. Prompts AI with "APPROVED:[TaskID]" or "REWORK:[TaskID] [Feedback]".</step>
+    <step name="ContinuationOrRework">If approved, AI prepares for next task. If rework, AI addresses feedback for the SAME TaskID.</step>
+    <step name="LoopUntilAllCompleted">Process repeats until all tasks are approved.</step>
+  </workflow_instructions>
+
+  <final_instructions>
+    <instruction>After generating code for a task AND the Git commands, state: "CODE AND GIT COMMANDS FOR [Task ID] GENERATED. REPO: https://github.com/sword-of-fury/project_qt. PLEASE EXECUTE GIT COMMANDS, PUSH THE BRANCH, CREATE A PULL REQUEST (IF APPLICABLE), AND REVIEW. WAITING FOR APPROVAL (APPROVED:[TaskID]) OR REWORK INSTRUCTIONS (REWORK:[TaskID] [feedback])."</instruction>
+    <instruction>When I provide "APPROVED:[TaskID]", you will prepare to work on the next PENDING task from this XML (which I will have updated).</instruction>
+    <instruction>When all tasks in `<task_list>` are conceptually 'COMPLETED' (approved by me), state: "---ALL TASKS FROM migration_tasks_config.xml COMPLETED AND APPROVED. MIGRATION FINISHED FOR REPO https://github.com/sword-of-fury/project_qt.---"</instruction>
+  </final_instructions>
+
+</project_migration_tasks>

@@ -178,6 +178,17 @@ private:
     
     QTimer* updateTimer; // Timer for periodic visual updates (e.g., cursor animations)
 
+    // Mouse state variables
+    bool draggingMap;
+    bool drawingActive;
+    bool selectionActive;      // True when left mouse is down in selection mode (for drag/bounding box)
+    bool boundingBoxSelection; // True when Shift+LeftClick starts a selection box
+    QPoint lastMousePos;       // For calculating deltas in mouseMove for panning etc.
+    QPoint dragStartTile;      // Map tile where drag started (for selection/drawing)
+    QPointF dragStartScenePos; // Scene position where drag started
+    Qt::MouseButton activeMouseButton; // To track which button initiated an action
+    bool mouseInsideView;      // True if mouse cursor is inside the view
+
     // Helper functions for MapView's internal logic
     void updateVisibleTiles(); // Triggers mapScene to update visible items
     void updateCursor(); // Redraws the brush preview cursor

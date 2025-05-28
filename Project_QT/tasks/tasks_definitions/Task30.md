@@ -1,2 +1,20 @@
-**Task30:  Replace wxStatusBar to Qt and simplify**
-- Replace the current status bar with Qt, consolidate the information fields if reasonable for the current simplified view of status information to simply keep track of: Pos(xyz), Current Brush (for feedback if selected a tool from palette if brush selection from toolPanel implies a signal updating only MapViews and then a global setting is updated which calls back into statusbar via `UpdateStatusBar()` to redisplay selected `Brush`, ideally not via MainWindow properties themselves for brush) or an Item's info (for tool tip/basic properties like before) when user clicks a `MapTileItem` and not if an EditorTab selected that implies some general "tab"/document properties display which might indicate which view-style selected by View menus/toolbars on statusbar or when any special tool from Tools are triggered directly without passing it around for generic tab statuses to statusbar from Map. Handle the update mechanism; status text gets updated whenever anything changes based on `getMap/selection state`, mouse, active brush (like zoom on MapView/MapCanvas calls out a signal directly to statusbar/main windows zoom status method) rather than an explicit 'OnXchanged` on all states which is simpler as it doesn't rely on too much signal-passing across classes/members. Migrate related cursor methods.
+**Task30: Replace `wxStatusBar` to Qt and simplify (Core Fields, `MainWindow` Update Methods)**
+- Task: **Replace the existing `wxStatusBar` from `wxwidgets` with Qt's `QStatusBar` in `project_qt`'s `MainWindow`. Consolidate and implement the display of essential status information.**
+    - **Analyze Existing `StatusBar`:** Review any current status bar implementation in `Project_QT/src`'s `MainWindow`.
+    - **`QStatusBar` Integration:** Add a `QStatusBar` to the `QMainWindow`. This can be done via `QMainWindow::setStatusBar()` or by directly creating it.
+    - **Information Fields (Initial Set):** Consolidate the information fields previously displayed. Based on original functionality and `Task30.md`, include core fields such as:
+        -   Current mouse map coordinates (X, Y, Z).
+        -   Name/ID of the currently selected `Brush` tool.
+        -   Basic information about a selected `Item` on the map (e.g., its ID and name).
+        -   Current zoom level.
+        -   Active layer/floor.
+        -   You can use `QLabel` widgets added to the `QStatusBar` (via `addPermanentWidget` or `addWidget`) to manage these distinct fields if complex formatting or updates are needed, or use `QStatusBar::showMessage()` for temporary messages and its sections for more permanent ones.
+    - **Update Mechanism in `MainWindow`:** Implement methods in `MainWindow` (or a dedicated status bar controller class) to update the content of these status bar fields. For example:
+        -   `void MainWindow::updateMouseMapCoordinates(const QPoint3D& mapPos)`
+        -   `void MainWindow::updateCurrentBrush(Brush* brush)`
+        -   `void MainWindow::updateSelectedItemInfo(Item* item)`
+        -   `void MainWindow::updateZoomLevel(double zoom)`
+        -   `void MainWindow::updateCurrentLayer(int layer)`
+    - **Initial State & Connections (Placeholder):** On startup, initialize the status bar fields to default values. Actual dynamic updates based on `MapView` mouse movements, brush selection from palettes, item selection on the map, or zoom/layer changes will be connected via signals/slots in later tasks. For now, ensure these `MainWindow` update methods can be called to manually change the status bar display.
+    - **Cursor Methods:** Migrate any methods related to updating the mouse cursor's appearance or state if they were previously tied to status bar update logic or originated from similar contexts in `wxwidgets`.
+    - **`Task30.md` will specify the exact fields required, their order, if any were "permanent" vs. temporary messages, and any formatting requirements from the original `wxStatusBar`.**

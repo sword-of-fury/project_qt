@@ -1,2 +1,21 @@
-**Task71: Implement `Waypoints` system.**
-Migrate the waypoints related actions and update related functionalities with a dedicate panel or section if appropriate for those on some properties menu (in main window if thats a common "map view setting", for example for find, replace, borderize).  Tie these to minimap/selection markers if it had display components there from how minimap or `Map` managed that before.
+**Task71: Implement `Waypoints` system (Full Functionality: Data, Map Interaction, UI Panel, Minimap Markers, Persistence)**
+- Task: **Migrate the complete `Waypoints` system functionality to `project_qt`. This includes finalizing the `Waypoint` data model, robust interaction with `Map` and `Tile` data, a dedicated UI panel for listing/editing waypoints, visual representation on both `MapView` and `Minimap`, and ensuring waypoints are saved and loaded correctly with the map.**
+    - **Analyze Existing Waypoint System:** Build upon the `Waypoint` data class (Task 20) and UI/map stubs (Task 63) in `Project_QT/src`. Refactor or complete as needed.
+    - **`Waypoint` Data Model (Finalize):** Ensure the `Waypoint` class can store all its attributes (name, position, type, textual data, connections to other waypoints if part of a pathing system) from `wxwidgets`.
+    - **`Map` Integration:**
+        -   `Map` class manages the list of all `Waypoint`s (`QList<Waypoint*>`).
+        -   Implement methods for adding, removing, retrieving, and finding waypoints on the map.
+    - **UI Panel (`WaypointEditorPanel`):**
+        -   Create a dedicated UI panel (e.g., a `QDockWidget`) for managing waypoints.
+        -   **List View:** Display all waypoints from the current `Map`. Allow selection.
+        -   **Property Editor:** When a waypoint is selected, display its properties (name, position, text, etc.) in editable fields (`QLineEdit`, `QSpinBox`, `QTextEdit`). Changes here must update the selected `Waypoint` object and the `Map`.
+        -   **Controls:** Add buttons for "Create New Waypoint," "Delete Selected Waypoint."
+    - **`MapView` Interaction (`WaypointBrush` / Tool):**
+        -   Implement placing/moving waypoints directly on the `MapView` using a `WaypointBrush` (from Task 56) or a dedicated waypoint tool. Clicking on the map should create a new waypoint or select an existing one at that location for editing.
+    - **Visual Representation:**
+        -   **`MapView`:** Use `WaypointItem` (`QGraphicsItem` from Task 58) to display waypoints on the `MapScene`. Ensure they are correctly positioned and visually distinct.
+        -   **`Minimap`:** If the `Minimap` (Task 90) should also display waypoint markers, implement this.
+    - **Persistence:** Ensure waypoints are saved with the map data (e.g., in the OTBM file within a dedicated waypoint node, or in a separate linked XML file if that was the original mechanism – refer to `Task71.md` or original map I/O for format). Implement loading waypoints when a map is opened.
+    - **Related Actions/Functionality:** Migrate any other waypoint-related actions from `wxwidgets` (e.g., "find waypoint," "go to waypoint," path creation/visualization if supported). These might be menu items or buttons in the `WaypointEditorPanel`.
+    - **Updating Map & Minimap:** Ensure all operations (add, delete, move, edit) update the `Map` data, trigger appropriate signals (e.g., `map->waypointsChanged()`), and cause `MapView` and `Minimap` to refresh their waypoint visuals.
+    - **`Task71.md` is critical. It must define the full scope of the original waypoint system: all data attributes, UI layout of any editor, specific map interaction behaviors (e.g., how placing worked), data persistence format, and any advanced features like pathing or linking waypoints.**

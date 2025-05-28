@@ -1,2 +1,14 @@
-**Task17: Migrate Selection Class - Add initial functions and structures.**
-- Create basic `Selection` functionality, including internal structure (tile selections set and methods, internal modes), `setSelection` implementation in Map and Select/Deselect commands in mapcanvas for visualization if implemented here, mirroring the original SELECTION flags to avoid selection flickering in visual refresh if using continuous selection bounding box.
+**Task17: Migrate `Selection` Class - Add initial functions and structures (Tile Storage, Modes, Flags)**
+- Task: **Create or complete basic `Selection` class functionality in `project_qt`.**
+    - **Analyze Existing `Selection` Code:** Review and integrate with any existing selection mechanism in `Project_QT/src`.
+    - **Internal Structure:** Implement the internal data structure for storing selected tile information. This could be a set of tile coordinates (`QSet<QPoint3D>` if Z is included, or `QSet<QPoint>` per floor), a list of `Tile*` pointers (if tiles are managed objects), or other suitable representation based on `Map`'s structure and performance needs. Define internal modes for selection (e.g., selecting tiles, selecting items, selecting areas).
+    - **Initial Methods:** Implement initial core methods like:
+        -   `addTileToSelection(const QPoint3D& tileCoords)` / `removeTileFromSelection(...)`
+        -   `clearSelection()`
+        -   `isSelected(const QPoint3D& tileCoords) const`
+        -   `isEmpty() const`
+        -   `getSelectedTiles() const` (returning the collection of selected tile data).
+    - **Map Interaction (Stubs):** Include stubs for `setSelection()` methods in the `Map` class (or a `MapSelectionController`) that would interact with this `Selection` object. Similarly, include placeholder `SelectCommand`/`DeselectCommand` structures that would eventually be used in a `MapCanvas` for visualizing or enacting selection changes.
+    - **Flag Migration:** Mirror the original `SELECTION` flags enum from `wxwidgets` if it was used to control selection behavior or visual refresh (e.g., to avoid selection flickering during continuous selection box drawing).
+    - **Scope:** This task is focused on the *data model and basic API of the `Selection` class*. Visual representation of the selection (e.g., bounding box on `MapCanvas`) and complex selection commands are for later tasks (e.g., Task 58).
+    - **`Task17.md` must detail the internal data structures used in `wxwidgets` selection, the full list of `SELECTION` flags, and the core methods the new `Selection` class must expose.**

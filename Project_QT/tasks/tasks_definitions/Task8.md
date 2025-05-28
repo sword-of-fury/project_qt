@@ -1,2 +1,15 @@
-**Task8: Full wxMenuBar to QMenuBar Implementation**
--  Migrate `MainMenu` using `QMenuBar`, `QMenu`, and `QAction`.  Connect menu actions to existing (or stub) slots in `MainWindow` for future functionality using Qt's signal/slot mechanism for all menu items (file, edit, view, map, tools, about/help), prioritizing the `MenuBar::ActionID` structure for `QAction` object names in `MainMenu` if direct lookup or identification from action IDs is intended.
+**Task8: Full `wxMenuBar` to `QMenuBar` Implementation (Hierarchy, Actions, Shortcuts, Placeholders)**
+- Task: **Migrate the entire `MainMenu` structure from `wxwidgets` (typically defined in `MainWindow` or a dedicated menu class) to Qt, using `QMenuBar`, `QMenu`, and `QAction`.**
+    - **Analyze Existing Menu Structure:** If `Project_QT/src`'s `MainWindow` already has a partial menu, this task involves completing or refactoring it to fully match the `wxwidgets` original.
+    - **Replicate Hierarchy:** Recreate the complete menu hierarchy, including all top-level menus (File, Edit, View, Map, Tools, Help/About, etc.) and any sub-menus, exactly as they appeared in the original application.
+    - **`QAction` Creation:** For every individual menu item and separator:
+        -   Create a corresponding `QAction` object.
+        -   Set its text (label), icon (`QIcon` if the original had one, ensuring icons are available via Qt Resource system or `ResourceManager`), status tip, and tooltip.
+        -   Assign keyboard shortcuts (accelerators) using `QAction::setShortcut()`.
+        -   Enable/disable and check/uncheck states (`setEnabled()`, `setCheckable()`, `setChecked()`) should have initial values reflecting the original default state.
+    - **Signal/Slot Connections (Placeholders):** Connect the `triggered(bool checked)` signal of each `QAction` to:
+        -   Existing slots in `Project_QT/src`'s `MainWindow` or other relevant handler classes if placeholder methods for these actions already exist.
+        -   New placeholder/stub slots in `MainWindow` (or dedicated action handler classes) if the functionality is not yet implemented. These stubs should at least log that the action was triggered.
+    - **Action Naming/Identification:** Prioritize using the `MenuBar::ActionID` enum values (or equivalent string constants from the `wxwidgets` version) for naming `QAction` objects (`QObject::setObjectName()`) or storing the ID as a property on the `QAction` (`QObject::setProperty()`). This is crucial if the `wxwidgets` application identified or dispatched actions based on these IDs, as `Project_QT/src` will likely need a similar mechanism.
+    - **Dynamic Menu Items:** If the original menu had items that were dynamically added, removed, enabled/disabled based on application state, identify these locations and ensure the `QMenu` structure allows for such modifications (placeholder logic for now).
+    - **`Task8.md` must provide the definitive structure of the `wxwidgets` `MainMenu`, including all menu titles, item labels, action IDs, default states, and any known dynamic behaviors that need to be accounted for in the Qt structure.**

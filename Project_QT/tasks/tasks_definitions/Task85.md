@@ -1,2 +1,20 @@
-**Task85: Implement Tile Locking Mechanism**
-- Migrate tile locking and associated actions that manipulate the tilemap states, updating internal representation (Map data), as well as QGraphicsItems from which theres visibility and interactivity in scene via flags/selection. This might include functions from selection.h which handle or implement the selectionBox (`SetSelection`) and related tile properties now based on Item types in map rather than individual selected Tiles' data and the Selection state from wx if there no longer specific select operations done by mouse but MapViews event/signal if a particular Tile gets clicked to change brush rather than from a selectionBox object when an edit operation (like rotate) takes place from popup, if the new MouseClick functions only propagate mouse position, event and floor unless something specific updates `MapView`. Ensure item edit menu entries exist like copyPosition when clicking from item list/similar for actions to show dialog when requested.
+**Task85: Implement Tile Locking Mechanism (Data Model, UI Actions, `MapView` Interaction)**
+- Task: **Migrate the tile locking mechanism and associated actions that manipulate tilemap states. This involves updating the internal `Map` data representation to include a lock status for tiles, and creating UI elements and `MapView` interactions to allow users to lock/unlock tiles, preventing accidental modification. Update `QGraphicsItems` to reflect lock status and respect it during interactions.**
+    - **Analyze Existing Locking Logic:** Review `Project_QT/src` for any existing tile protection or locking features.
+    - **`Map` Data Model Update:**
+        -   Add a property to the `Tile` class (e.g., `bool m_isLocked;`) or a `TileFlag` to represent its locked state.
+        -   Provide `Tile::isLocked() const` and `Tile::setLocked(bool locked)` methods.
+    - **UI Actions for Locking/Unlocking:**
+        -   Add `QAction`s (e.g., "Lock Tile(s)," "Unlock Tile(s)") to the main menu (e.g., Edit or Map menu) and/or the `MapView`'s right-click context menu.
+        -   These actions should operate on the current tile selection (`Selection` object from Task 17).
+    - **Command Implementation (Undoable):**
+        -   Create `LockTilesCommand` and `UnlockTilesCommand` (inheriting from `QUndoCommand`).
+        -   `redo()`: Iterates the selected `Tile`s and calls `tile->setLocked(true/false)`.
+        -   `undo()`: Reverts the locked state.
+    - **`MapView` Interaction:**
+        -   All brush operations and selection modification tools in `MapView` must now check `tile->isLocked()` before attempting to modify a `Tile`. If locked, the modification should be prevented (potentially with user feedback like a status bar message).
+    - **Visual Indication:**
+        -   `MapTileItem::paint()` should visually indicate if a tile is locked (e.g., draw a lock icon overlay, change its border color, reduce opacity of content slightly). This visual state should update when `Tile::setLocked()` is called.
+    - **`SelectionBox` Logic (`SetSelection`):** If the original `selection.h` / `SetSelection` logic interacted with tile locking (e.g., couldn't select locked tiles for modification), port this behavior. However, `MapViews` event/signal flow on tile click (which now might change the active brush if that's the interaction from `Task80.md`) needs to consider tile lock status *before* initiating a brush change or selection box operation that would modify, unless specific selection operations are performed from a popup menu after `MapView` already determined the tile can be acted upon.
+    - **Item Edit Menu (`copyPosition`):** Ensure any context menu entries for items (e.g., "Copy Position") on locked tiles are appropriately disabled or respect the lock.
+    - **`Task85.md` needs to describe how tile locking was implemented in `wxwidgets` (data storage, UI elements), how it affected `SelectionBox` or other tools, and the visual cues for locked tiles.**

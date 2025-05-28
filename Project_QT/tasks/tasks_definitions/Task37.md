@@ -1,2 +1,19 @@
-**Task37: Implement `TerrainBrush` (Base for Terrain Types)**
-- Create the base class `TerrainBrush` in project_qt, inheriting from the new `Brush` class and transferring basic properties and logic (like name, look\_id, friend/enemy handling via Brush IDs if needed, z-order, if relevant for 3D or just plain drawing order. Implement basic `draw()`/`undraw()` as stubs or basic functionality as much as the pure virtual interface in `Brush` would allow as terrain brushes in wxwidgets didn't appear to modify Item or tile immediately at this call, that seems handled in `mousePressEvent` calls like NormalBrush used which is similar for Flood fill, rather these functions seem to populate map temporarily as secondary\_map which then QGraphicsScene would check for placement/interactions at draw events via mainWindow and `map_display.h`-like interactions in view on clicks rather than brush doing it on its own to keep separation between the rendering/editing loop).
+**Task37: Implement `TerrainBrush` (Base for Terrain Types - Drawing Stubs & Core Properties)**
+- Task: **Create the base class `TerrainBrush` in `project_qt`, ensuring it inherits from the `Brush` abstract base class (defined in Task 36). This class will serve as a common parent for more specific terrain-altering brushes like `GroundBrush` and `WallBrush`.**
+    - **Analyze Existing Terrain Brushes:** If any terrain-related brush classes exist in `Project_QT/src`, this new `TerrainBrush` should serve as their (or a new) common ancestor, refactoring if necessary.
+    - **Core Properties:** Transfer basic properties relevant to terrain brushes from the `wxwidgets` equivalent, such as:
+        -   `name()` implementation (e.g., returning "Terrain Brush").
+        -   `type()` implementation (returning its specific `Brush::Type`).
+        -   `look_id` or `itemID` if terrain brushes are associated with a specific item to place (though usually derived brushes handle this).
+        -   Z-order hints or typical drawing layer information, if relevant for terrain manipulation at this abstract level (as specified in `Task37.md`).
+        -   Friend/enemy handling logic (if applicable from `wxwidgets` `Brush` IDs where terrain could be hostile/neutral).
+    - **`draw()` / `undraw()` Implementation (Stubs/Conceptual):**
+        -   Implement the virtual `draw(Map* map, const QPoint& tilePos, Item* currentItem)` and `undraw(...)` methods.
+        -   For this base `TerrainBrush`, these methods should contain stubs or very basic placeholder functionality.
+        -   The original `wxwidgets` terrain brushes often didn't directly modify `Tile` or `Item` data within these calls; such modifications were typically handled in `mousePressEvent` (or similar handlers in `MapCanvas`) which then called `NormalBrush` or other more specific logic.
+        -   Therefore, these `draw`/`undraw` methods here might conceptually:
+            -   Log the attempt to draw/undraw terrain at `tilePos`.
+            -   Indicate the type of terrain item that *would be* placed (e.g., based on `currentItem` or internal state).
+            -   Or, if a more advanced pattern is used, they could prepare a `Command` object representing the terrain change, which `MapView`'s interaction logic would then queue for execution.
+    - **Interaction Deferral:** Actual tile modification logic or calls to a `BorderSystem` (for auto-bordering after terrain placement) are handled later, typically within the `MapCanvas`/`MapView` mouse event handlers that utilize the active brush, or in the more specialized derived terrain brushes. `TerrainBrush` sets the stage.
+    - **`Task37.md` will clarify any shared properties or behaviors specific to all terrain brushes in `wxwidgets` that should be part of this base class.**

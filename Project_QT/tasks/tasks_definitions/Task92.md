@@ -1,2 +1,18 @@
-**Task92: Port SpawnItem code from Map Display**
-. Update or replace where those special markers (on tiles/items, likely using new dedicated marker now) like the ones spawns.cpp does to indicate range should be now visualized when rendering tile view rather than it directly handling drawing on `map-tiles`. Ensure all drawing flags like those set on spawns get replaced when now Brushes do them (rather than setting tileset from those if they are on `Selection`), which means update for TileItems as these got created after Brush has been applied to keep state and any functions requiring their flags now up-to-date based on which type tiles/items should have with borderization logic now done before setting if tiles no longer determine border status (was in update\_flags similar to modified now on `tiles`).
+**Task92: Port `SpawnItem` code from Map Display (Finalizing Spawn Visualization & Attribute Reflection)**
+- Task: **Update or replace how special visual markers for `Spawn`s (from `wxwidgets spawns.cpp` or map display logic) are rendered on the `MapView` / `MapScene` in `project_qt`. This focuses on ensuring that the visual representation (markers, radius indicators) correctly reflects all `Spawn` attributes and that drawing flags related to spawns are correctly set or interpreted by the new rendering system (e.g., via `Brush`es applying spawn data which then `TileItem`s or specialized `SpawnItem`s use for drawing).**
+    - **Analyze Existing Spawn Visuals:** Build upon `SpawnItem` (`QGraphicsItem` from Task 58) or `MapTileItem` overlay logic for spawns in `Project_QT/src`.
+    - **Visualizing Spawn Attributes:**
+        -   Ensure the `SpawnItem` (or visual representation method) can draw:
+            -   A marker at the spawn's center.
+            -   An accurate representation of its spawn radius (e.g., a semi-transparent circle).
+            -   Potentially indicators for creature types or counts if the original did this visually.
+        -   These visuals must update dynamically if the `Spawn`'s attributes (radius, position, active state) change.
+    - **Drawing Flags Interpretation:** If original `wxwidgets spawns.cpp` set specific "drawing flags" on spawns (or on `Tile`s containing them) that affected how they were rendered, this logic needs to be translated.
+        -   If these were `Tile` flags (e.g., `Tile::hasSpawn`), then `MapTileItem::paint()` might use this.
+        -   If they were properties of the spawn data itself, `SpawnItem::paint()` should use them.
+    - **Interaction with `Brush` Application:** When a `SpawnBrush` (Task 87) applies spawn data to the `Map`:
+        -   The `Map` should update or create the relevant `Spawn` data object.
+        -   This change must trigger an update to the visual `SpawnItem` in the `MapScene`.
+        -   Ensure any state flags on `TileItem`s (if spawns were represented by special items or tile flags) are correctly set by the `Brush` application (replacing `Selection` setting tileset properties).
+    - **Borderization Logic & `update_flags`:** If the original note "which means update for TileItems as these got created after Brush has been applied to keep state and any functions requiring their flags now up-to-date based on which type tiles/items should have with borderization logic now done before setting if tiles no longer determine border status (was in update_flags similar to modified now on tiles)" refers to how `Spawn` items/flags influenced tile state for bordering or other systems, that interaction needs to be understood and ported. If a spawn implicitly changed how a tile bordered, the `BorderSystem` might need to be notified after a spawn is placed/modified.
+    - **`Task92.md` needs to describe the exact visual appearance of spawn markers and radius indicators from `wxwidgets`, any specific drawing flags used, and how spawn data modification (e.g., by a brush or editor) triggered visual updates on the map display.**

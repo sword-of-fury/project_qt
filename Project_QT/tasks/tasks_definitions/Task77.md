@@ -1,2 +1,14 @@
-**Task77: Update Status/Toolbar for Action IDs for items when drawing**
-, if any functions still had `MainToolbar` actions updating some global `wxItem` or palette property now after changing `Brush` to point to it; add listeners in the item panels `PaletteItemBrush`. This was done by ActionIDChange.
+**Task77: Update Status/Toolbar for Action IDs for items when drawing/brush changes (Full Palette/Brush Sync)**
+- Task: **Ensure that `StatusBar` (Task 30) and `MainToolBar` (Task 9/46) accurately reflect the currently active `Brush`, its configured `Item` (if applicable, e.g., for an `ItemBrush`), or any other relevant drawing action/mode ID. This requires robust signal/slot connections from palettes (`PaletteItemBrush`), `BrushManager`, and potentially `MapView` to `MainWindow` for UI updates.**
+    - **Analyze Existing UI Sync:** Review how UI elements currently update in `Project_QT/src` based on tool/item selections.
+    - **Source of Truth:** The `BrushManager` typically holds the `currentActiveBrush`. Item palettes (like those created in Task 70 for tilesets) will manage which `Item` (or `ItemType`) is selected within them for use with an `ItemBrush` or similar.
+    - **Signal Connections for Brush Change:**
+        -   `BrushManager::currentBrushChanged(Brush* newBrush, Brush* oldBrush)` signal should be connected to a slot in `MainWindow`. This slot updates the `StatusBar` (e.g., "Current Brush: Normal") and potentially highlights the corresponding tool button on `MainToolBar`.
+    - **Signal Connections for Item Selection in Palettes:**
+        -   When an item is selected in a `PaletteItemBrush` (or any item palette UI like those from Task 70):
+            -   The palette should emit a signal like `itemSelectedForBrush(Item* item)` or `itemTypeSelectedForBrush(ItemTypeID id)`.
+            -   This signal could be connected to `BrushManager` (if the current brush needs to be configured with this item) and/or to `MainWindow`.
+            -   `MainWindow`'s slot would then update `StatusBar` (e.g., "Item to draw: Wooden Floor (ID:123)") and potentially other UI elements that reflect the current drawing context.
+    - **Replicating `ActionIDChange`:** If `ActionIDChange` in `wxwidgets` was a global event or mechanism to update UI based on the current "action ID" (representing the active tool or drawing item), replicate this concept using Qt signals and slots. The "Action ID" might now be a combination of the active `Brush::Type` and any item it's configured with.
+    - **Two-Way Sync (if applicable):** If changing the active tool via a `MainToolBar` button should also update the selection in a brush palette, ensure this reverse connection is also made (e.g., `MainWindow` action triggers -> `BrushManager` sets brush -> `BrushManager` signal -> palette updates its selection).
+    - **`Task77.md` should specify all UI elements (status bar fields, toolbar button states, palette selections) that reflected the active drawing tool/item in `wxwidgets`, the events or mechanisms (like `ActionIDChange`) that triggered these updates, and the source of the "Action ID" or current item information.**

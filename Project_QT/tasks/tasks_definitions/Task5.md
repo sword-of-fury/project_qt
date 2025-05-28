@@ -1,2 +1,19 @@
-**Task5: Refactor events for Mouse position and wheel.**
-- Migrate the basic mouse event handling (position updates, wheel events for zoom) from wxWidgets' `wxMouseEvent`, `wxMouseWheelEvent`, and related methods (e.g., `ScreenToMap`, `GetViewSize`) to their corresponding Qt counterparts (`QMouseEvent`, `QWheelEvent`) and their appropriate handlers, integrating seamlessly with Qt's event model and the existing project structure in `MapView`.  Ensure proper coordinate translation using `mapToScene`, `mapFromScene`.
+**Task5: Refactor events for Mouse position and wheel in `MapView` (Full Porting of Core Interaction Logic)**
+- Task: **Perform a complete migration of the foundational mouse event handling logic from the primary map display component in `wxwidgets` (typically named `MapCanvas` or similar, responsible for direct map interaction) to its designated Qt equivalent in `Project_QT/src` (e.g., a custom `QGraphicsView` subclass, or a specialized `QWidget` if not using `QGraphicsScene` architecture).**
+    - **Analyze Existing `MapView` Code (`Project_QT/src`):** Thoroughly examine any existing mouse event handling methods (`mousePressEvent`, `mouseMoveEvent`, `mouseReleaseEvent`, `wheelEvent`, `enterEvent`, `leaveEvent`) in `Project_QT/src`'s current `MapView` implementation. The newly ported logic must integrate with, enhance, or replace this existing code to ensure consistency and achieve full functionality.
+    - **Event Type and Property Mapping (Comprehensive):**
+        -   **`wxMouseEvent` (for position, clicks, drags, enter/leave):** Map to `QMouseEvent`. Port retrieval of:
+            -   Position: `GetPosition()` -> `event->pos()` (widget-local) or `event->globalPos()` (global screen).
+            -   Buttons: `LeftIsDown()`, `MiddleIsDown()`, `RightIsDown()`, `Button(wxMOUSE_BTN_ANY)` -> `event->button()` and `event->buttons()`.
+            -   Modifiers: `ShiftDown()`, `ControlDown()`, `AltDown()`, `MetaDown()`, `Dragging()` -> `event->modifiers()`.
+            -   Click counts: `LeftDClick()`, `MiddleDClick()`, `RightDClick()` -> `QMouseEvent` typically needs manual tracking for double-clicks if not handled by specific widget signals, or check original logic.
+            -   Enter/Leave events (`wxEVT_ENTER_WINDOW`, `wxEVT_LEAVE_WINDOW`) -> `enterEvent(QEvent*)`, `leaveEvent(QEvent*)`.
+        -   **`wxMouseWheelEvent` (for zoom):** Map to `QWheelEvent`. Port:
+            -   Rotation/Delta: `GetWheelRotation()`, `GetWheelDelta()` -> `event->angleDelta()` (typically `pixelDelta()` for high-res mice if relevant, otherwise `angleDelta()` divided by standard delta values).
+            -   Lines per action: `GetLinesPerAction()` (if used for scaling zoom speed).
+    - **Coordinate System Porting (Full Logic):** Crucially, migrate all coordinate transformation logic:
+        -   `ScreenToClient`/`ClientToScreen` (if used by `wxwidgets` for raw window coord adjustments).
+        -   `ScreenToMap` / `ClientToMap` (or however `wxwidgets` named the conversion from widget/screen pixel coordinates to logical map coordinates): This is vital and must be re-implemented using Qt's coordinate systems. If using `QGraphicsView`, `mapToScene()` and `mapFromScene()` are key. If not, custom transformation matrices or logic will be needed based on current pan/zoom state.
+    - **View Information Porting:** Methods like `GetViewSize` or `GetClientSize` used to determine the drawable area dimensions must be mapped to `size()`, `contentsRect().size()`, or `viewport()->size()` in Qt.
+    - **Integration with Qt Event Model:** Ensure the new handlers correctly accept or ignore events to allow proper event propagation if child items or other event filters are involved.
+    - **`Task5.md` provides a detailed checklist of specific `wxwidgets` map view event handler methods (e.g., `OnMouseDown`, `OnMouseMove`, `OnMouseWheel`), the state variables they managed, and the precise coordinate transformation functions that are critical to port to ensure identical mouse interaction for core features like panning (if drag-based), zooming, and accurate coordinate reporting within the `MapView`.**

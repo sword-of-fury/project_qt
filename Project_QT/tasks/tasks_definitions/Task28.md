@@ -1,2 +1,16 @@
-**Task28: Add Initial Placeholder Renderers (Map, Tile, Item)**
-* Implement placeholder rendering of map, tiles, and items in the scene until proper sprite drawing. Add necessary rendering methods if needed in `project_qt` mapdrawer with the correct basic look if they must have placeholders using `QRectF` if bounding box information was drawn around `Items`/`Tiles`/etc for debugging.
+**Task28: Add Initial Placeholder Renderers (Comprehensive Map, Tile, Item Visual Stubs)**
+- Task: **Implement initial, placeholder rendering methods across the `Map`, `Tile`, and `Item` classes in `project_qt` to ensure that every core game entity has a basic visual representation on the `MapScene` even before full sprite rendering is implemented. This is critical for visual debugging and understanding scene composition.**
+    - **Analyze Existing Rendering:** Review any `paint()` or `draw()` methods in `Project_QT/src` for these classes. This task is to ensure comprehensive placeholder coverage or to implement it if missing.
+    - **`Map` Placeholders (if applicable):** If the `Map` itself has global visual elements to draw (e.g., a background color, a map-wide grid distinct from tile borders, debug information for map boundaries), implement this in a conceptual `MapDrawer` or directly in `MapView` if it orchestrates overall scene drawing.
+    - **`Tile` Placeholders (via `MapTileItem`):** The `MapTileItem::paint()` method (drawing its associated `Tile`):
+        -   If the `Tile` object has no items, or items have no drawing logic yet, the `MapTileItem` should draw a simple placeholder for the tile itself (e.g., a rectangle filled with a default color, or a color based on a primary tile flag like "walkable/non-walkable").
+        -   Optionally, draw the tile's coordinates (X,Y,Z) as text for debugging.
+    - **`Item` Placeholders (via `Item::draw()` called by `Tile::draw()`):** The `Item::draw(QPainter* painter, ...)` method (which is called by `Tile::draw()` for each item on the tile):
+        -   If the `Item` has no sprite rendering yet (Task 54 not done), it must draw a placeholder. This could be:
+            -   A small colored rectangle at its position within the tile.
+            -   Its Item ID or a short type name drawn as text.
+            -   A generic icon.
+        -   This placeholder should respect the item's bounding box or a standard placeholder size.
+    - **Debugging Info:** Where appropriate (e.g., if a debug flag `DrawingOptions::drawDebugInfo` is true), placeholders can include drawing bounding boxes (`QRectF`) around `Items` or `Tiles` to visualize their extents and positions.
+    - **Consistency:** Aim for placeholders that provide enough visual distinction to understand the scene composition but are clearly identifiable as temporary.
+    - **`Task28.md` should outline the expected visual appearance for these placeholders (e.g., color codes for different item types or tile states, information to display as text) and which specific debug visualizations (like bounding boxes) are initially required.**

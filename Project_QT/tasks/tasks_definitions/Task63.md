@@ -1,2 +1,19 @@
-**Task63: Migrate Waypoints to Qt (`waypoints.h`/cpp) including its interaction in Maps, creating appropriate ui elements for list/edit operations like previously and handling those from main.**
-Make it work with tile location when editing a tile using Tile->setWaypoints using attributes for any waypoint if necessary. Ensure all attributes get stored via Properties. `update()` will need similar signals using an ID or other appropriate system like Tile changed and waypoints using selection mode that needs both selection info update on selection start to handle `set*Waypoint`.
+**Task63: Migrate Waypoints to Qt (`waypoints.h/.cpp`) including its interaction in Maps, creating appropriate UI elements for list/edit operations (Full Data Model, UI Stubs, Map Linking)**
+- Task: **Fully migrate the `Waypoint` system from `wxwidgets waypoints.h/.cpp` to `project_qt`. This involves implementing the `Waypoint` data class, integrating waypoints into the `Map` data model, and creating initial (stubbed) UI elements for listing and editing waypoints, ensuring interaction with `Tile` location data.**
+    - **Analyze Existing Waypoint Code:** Build upon `Waypoint` data structure (Task 20) and any UI stubs in `Project_QT/src`.
+    - **`Waypoint` Data Class (Finalize):** Ensure the Qt `Waypoint` class (from Task 20) fully represents all data attributes of a waypoint from the `wxwidgets` version (name, position (X,Y,Z), type, radius, textual description/script, color, etc.). Implement all necessary getters and setters.
+    - **`Map` Integration:**
+        -   The `Map` class must now be able to store and manage a collection of `Waypoint` objects (e.g., `QList<Waypoint*> m_waypoints;`).
+        -   Implement methods in `Map` like `addWaypoint(Waypoint* wp)`, `removeWaypoint(Waypoint* wp)`, `getWaypoints() const`, `findWaypointByName(const QString& name)`.
+    - **`Tile` Interaction:**
+        -   Implement logic for how `Tile`s interact with waypoints if a waypoint is "on" or associated with a specific tile. This could be `Tile::setWaypoint(Waypoint* wp)` and `Tile::getWaypoint() const` if a tile can only have one, or a list if multiple. Alternatively, `Waypoint`s might just have coordinates and the `Map` is queried for waypoints at a given `Tile` location. `Task63.md` needs to clarify this model from `wxwidgets`.
+        -   Ensure any attributes for a waypoint (like name or description) are stored and accessible via the `Waypoint` object itself (potentially using a `Properties` map similar to `Item`s if it has many custom attributes).
+    - **UI Elements (Initial Stubs):**
+        -   **List View:** Create a basic `QWidget` panel (e.g., for a `QDockWidget`) containing a `QListWidget` to display waypoint names. Populate it (stub population) from `Map::getWaypoints()`. Selecting a waypoint in the list should eventually trigger property display.
+        -   **Edit Dialog:** Create a `QDialog` (e.g., `EditWaypointDialog`) with UI controls (`QLineEdit` for name, `QSpinBox` for radius, `QTextEdit` for description) to edit `Waypoint` properties. Buttons connect to `accept()`/`reject()`.
+    - **Updating & Signals:**
+        -   When a waypoint is added, removed, or its properties are edited (via the dialog), the `Map` data must be updated.
+        -   The `Map` should emit a signal (e.g., `waypointsChanged()` or `waypointModified(Waypoint* wp)`) so that UI elements (list view, `MapView` for waypoint markers) can refresh.
+        -   `Tile::setWaypoint` (if used) should also trigger `Tile::tileChanged()` signals.
+    - **Selection Mode Interaction:** Waypoint interaction often needs selection info. Implement how `MapView` selection (when a "waypoint tool" or "waypoint selection mode" is active) identifies a tile to `set*Waypoint` or selects an existing waypoint for editing.
+    - **`Task63.md` must define the full `Waypoint` data structure from `wxwidgets`, how waypoints were stored (globally on map, per-tile), the UI layout for any waypoint list or editor windows, and how updates to waypoints were propagated and saved (XML usually).**

@@ -1,2 +1,29 @@
-**Task79: Implement remaining selection tool features (actions, signals, copy/cut/paste commands)**
-*	Fully implement selection.h for mouse actions including item transformation/deletion. Focus now on proper linking to create copy/paste from source's clipboard/actions into a QT map command/action similar to Selection's move functionality, maintaining as required any additional info or checks it kept (via item.h properties that indicate what state its in for later reconstruction and undo/clipboard if applicable and not relying just on Item itself as in newer implementations from tile->`ItemProperties`, e.g. how copy did in selection, using those flags as direct access to its underlying properties now after removing from that map like pop methods where in qt tile class/actions would iterate by type at undo). Include visual updates on paste operations to prevent potential crashes by having any QGraphicsView `refreshItems()`-type events call similar to Wx selection mode tile select/set. Update if item selection from current tile sets states (hasSelected, isSelectedTile) for instance in DrawingOptions to properly display based on tile type selected if these use tile selection, flags, Item types in Qt versions.
+**Task79: Implement remaining selection tool features (Full Mouse Actions, Transformation Logic, Signals, Copy/Cut/Paste Commands)**
+- Task: **Fully implement all features of the selection tool/mode (`SelectionBrush` or equivalent) from `wxwidgets selection.h`, including all mouse actions, item transformation/deletion within the selection, robust copy/cut/paste commands using the clipboard system, and proper signaling for visual updates.**
+    - **Analyze Existing Selection Tool Code:** Build upon `Selection` data model (Task 17), `SelectionItem` visual (Task 58), transformation command stubs (Task 69), and `ClipboardData` (Task 21) in `Project_QT/src`.
+    - **Mouse Actions (`selection.h` logic):**
+        -   Port all detailed mouse interaction logic from `wxwidgets selection.h` for defining and modifying selections (single click, click-drag for rectangle, potentially other shapes if supported like polygon/lasso).
+        -   Handle states like `startDrag` with modifier keys correctly (Task 61 refined this, ensure full `selection.h` behaviors are covered).
+    - **Item Transformation within Selection (Execution of Commands):**
+        -   The transformation `QAction`s (Move, Rotate, Flip from Task 69) when triggered while a selection is active, must now execute their full logic:
+            -   Operate on the `Item`s and/or `Tile`s within the current `Selection`.
+            -   Correctly handle `Item` properties during transformations (e.g., orientation of directional items, relative positions if items are grouped).
+            -   These operations must be fully undoable via the `QUndoStack`.
+    - **Item Deletion within Selection:** Implement a "Delete Selection" command that removes all selected `Item`s (and potentially clears `Tile`s) from the `Map`. This must be undoable.
+    - **Copy/Cut/Paste Commands (Full Implementation):**
+        -   **Copy:** Create a `CopySelectionCommand`. When executed:
+            -   Gathers data for all selected `Tile`s/`Item`s using `Map` and `Selection` objects.
+            -   Uses `ClipboardData::copyData()` to serialize this selection into the chosen format (e.g., JSON).
+            -   Puts the serialized data onto `QApplication::clipboard()` using an appropriate MIME type.
+        -   **Cut:** Create a `CutSelectionCommand`. Does the same as Copy, then deletes the selected `Tile`s/`Item`s from the `Map` (this part must be undoable).
+        -   **Paste:** Create a `PasteSelectionCommand`. When executed:
+            -   Retrieves serialized data from `QApplication::clipboard()`.
+            -   Uses `ClipboardData::setDataFromSerialized()` to deserialize it.
+            -   "Pastes" the `Tile`s/`Item`s onto the `Map` at a target location (e.g., mouse cursor, center of view), creating new `Tile`s/`Item`s or merging with existing ones. Logic for handling overlaps/merges from original `PasteTile` or selection paste needs porting.
+            -   This command must be undoable.
+    - **Visual Updates & Signals:**
+        -   All selection operations (making selection, transforming, pasting) must trigger signals that cause `MapView` and the `SelectionItem` (`QGraphicsItem`) to visually update immediately and accurately.
+        -   `MapView` needs to potentially refresh items in the affected area if a paste operation overwrites or adds many new items to avoid visual crashes or stale data.
+        -   Update how `DrawingOptions` or tile states like `hasSelected`, `isSelectedTile` (if used for visual styling by `Item::draw()` or `Tile::draw()` based on selection state) are correctly set/queried in Qt.
+    - **`selection.h` Logic for Item States:** If `selection.h` logic in `wxwidgets` managed specific states of items *for the purpose of clipboard operations or later reconstruction* (beyond basic `Item` properties), ensure this is correctly handled. For example, how `copy` in selection used flags and if `ItemProperties` access from tile `pop` methods for undo requires those states preserved on copied `Item`s.
+    - **`Task79.md` must provide a deep dive into `wxwidgets selection.h` and related classes: all mouse interaction state machines, exact logic for copy/cut/paste including data formats used internally if not system clipboard directly, how transformations were applied to items (especially complex ones), and all visual feedback mechanisms related to the selection tool.**

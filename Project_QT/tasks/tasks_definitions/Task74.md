@@ -1,2 +1,19 @@
-**Task74: Port Waypoint drawing code, and functionality for clicking.**
-Update mouse click action listeners/implement mouse over tooltip text similar to how the Wx waypoints had. If there's both generic Waypoint for navigation/AI, and an Item property type named similar ensure `tile::draw()` is now handling correct marker rather than Brush needing to handle specific drawing using map level (`tiles[x][y]`) if there's no longer explicit marker placement by it like similar `Spawn`s/zones get. Update existing handlers and create stub classes in qt if some special editor type methods now got moved (`TileEditorWaypoint::OnXXXClick` likely to MainWindows, for updating maps etc, ensuring tiles that have been modified after those operations have an action assigned like TileSelection seems done rather than directly drawing tile into Map if those now might imply additional visual effects. Add map->updateWaypoint calls where relevant).
+**Task74: Port `Waypoint` drawing code, and functionality for clicking (Full `MapView` Interaction, Tooltips, `Map` Updates)**
+- Task: **Update `MapView` and related classes in `project_qt` to fully support waypoint drawing, mouse click interactions for placing/selecting/editing waypoints, and mouse-over tooltips for displaying waypoint information, replicating `wxwidgets` functionality.**
+    - **Analyze Existing Waypoint Rendering/Interaction:** Build upon `WaypointItem` (Task 58) and `MapView` click stubs (Task 71) in `Project_QT/src`.
+    - **Waypoint Drawing in `MapView`:**
+        -   Ensure `WaypointItem`s (representing `Waypoint` objects from the `Map`) are correctly added to the `MapScene` and displayed at their proper map coordinates.
+        -   The `WaypointItem::paint()` method should render the correct visual marker (shape, color, icon) for the waypoint.
+        -   If `tile::draw()` in `wxwidgets` handled drawing waypoint markers directly if waypoints were per-tile entities, this now primarily shifts to `WaypointItem` being the visual representation, though `Tile::draw()` might still provide context or an overlay if a tile itself has a "waypoint presence" flag.
+    - **Mouse Click Actions in `MapView`:**
+        -   **Placement:** If a "Waypoint Brush" or tool is active, clicking on `MapView` should:
+            -   Create a new `Waypoint` object at the clicked map coordinates.
+            -   Add it to the `Map` (`map->addWaypoint()`).
+            -   Optionally open an `EditWaypointDialog` (Task 63) to set its properties.
+        -   **Selection/Editing:** Clicking directly on a `WaypointItem` in `MapView` should:
+            -   Select the waypoint (update a `currentSelectedWaypoint` state).
+            -   Open the `EditWaypointDialog` populated with the selected waypoint's data.
+        -   Port original event handler logic like `TileEditorWaypoint::OnXXXClick` from `wxwidgets` to `MainWindow` or `MapView` mouse event handlers, ensuring that modifications trigger appropriate `Map` update actions/commands (like `ModifyWaypointCommand`) for undo/redo.
+    - **Mouse-Over Tooltips:** Implement tooltips that appear when the mouse hovers over a `WaypointItem` in `MapView`, displaying key waypoint information (e.g., name, description).
+    - **Map Updates (`map->updateWaypoint`):** Ensure that whenever a waypoint is created, deleted, or its properties (especially position) are modified, `map->updateWaypoint(...)` or equivalent methods are called. This should, in turn, emit signals (e.g., `map->waypointModified(wp)`) that cause `MapScene` to update the visual representation of that `WaypointItem` (e.g., reposition it, redraw its text/icon).
+    - **`Task74.md` must describe the visual appearance of waypoint markers in `wxwidgets`, the exact behavior of mouse clicks for placement and editing, the content and appearance of tooltips, and how waypoint data changes were propagated to update map display and ensure data persistence.**

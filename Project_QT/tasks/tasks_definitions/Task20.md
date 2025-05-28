@@ -1,2 +1,12 @@
-**Task20: Initial Waypoint Class Migration and Storage.**
-- Start initial waypoints data handling and its basic brush/selector creation in Qt project, storing data (`waypoint.h`) to preserve existing behavior and make later reintegration more manageable with a UI panel later. Maintain only Waypoint data types, core functionality. Later these will integrate with `Tileset`/`Brush`. Ensure proper saving to .xml (custom format from original or adapt a simpler system using existing Map/Tileset format when that is ready).
+**Task20: Initial `Waypoint` Class Migration and Storage (Data Structure & Core Attributes ONLY)**
+- Task: **Start the initial migration of `Waypoint` data handling by porting the `Waypoint` data structure itself to `project_qt`.**
+    - **Analyze Existing `Waypoint` Code:** Review `Project_QT/src` for any existing `Waypoint` class and integrate/refactor as needed.
+    - **Data Structure Migration:** Based on the original `waypoint.h` (and `waypoint.cpp` for implementation details) from `wxwidgets`, replicate the `Waypoint` class/struct in Qt. Preserve all existing data fields and core attributes (e.g., name, position (x,y,z), type, associated script/text, etc.).
+    - **Basic Accessors:** Implement basic getter and setter methods for these attributes.
+    - **Focus:** The absolute focus for this task is *only* on migrating the `Waypoint` data types and core data storage structure.
+    - **Deferred Functionality:**
+        -   Creation of a waypoint brush or selector tool is deferred.
+        -   Integration into any UI panel for listing/editing waypoints is deferred.
+        -   Actual storage on `Map` objects or `Tile` objects is deferred (though the `Map` might get a placeholder `QVector<Waypoint*>` as per Task 11).
+        -   Proper saving/loading of waypoints to XML (or other formats) as the original might have done (or adapting to a simpler system using existing `Map`/`Tileset` formats when those are ready) is also deferred.
+    - **`Task20.md` provides the definitive structure of the `Waypoint` object from `wxwidgets`, including all its member variables and their types, which must be accurately represented in the new Qt `Waypoint` class.**

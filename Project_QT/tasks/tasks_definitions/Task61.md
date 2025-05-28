@@ -1,2 +1,15 @@
-**Task61: Integrate Tile Selection in `MapView`**
-- Fully integrate tile selection behavior into the Qt `MapView`. Mimic previous behavior (shift/control-based operations).
+**Task61: Integrate Tile Selection in `MapView` (Full Modifier Key Logic & Visual Synchronization)**
+- Task: **Fully integrate tile selection behavior into the Qt `MapView` (or its `MapCanvas` equivalent in `project_qt`). This involves robust handling of mouse events (clicks and drags) in conjunction with modifier keys (Shift/Ctrl) for various selection modes (add to selection, subtract from selection, new selection) and ensuring precise visual synchronization of the selection state on the `MapScene`.**
+    - **Analyze Existing Selection UI:** Review `Project_QT/src`'s `MapView` and any existing selection logic (from Task 17 for `Selection` data model, Task 58 for `SelectionItem` visual).
+    - **Mouse Event Handling in `MapView`:**
+        -   `mousePressEvent`: Initiate selection (e.g., start a rubber-band, select a single tile). Based on Shift/Ctrl keys, determine if it's a new selection, add-to-selection, or subtract-from-selection.
+        -   `mouseMoveEvent`: If dragging after a press, update the selection area (e.g., resize rubber-band, continuously select tiles under cursor based on modifier keys).
+        -   `mouseReleaseEvent`: Finalize the selection based on the drag operation.
+    - **Interaction with `Selection` Object:** All these mouse interactions in `MapView` must update the internal `Selection` data object (from Task 17) by calling its `addTileToSelection`, `removeTileFromSelection`, `clearSelection`, `replaceSelection` methods.
+    - **Modifier Key Logic:** Implement the exact behavior for Shift-click/drag and Control-click/drag (and combinations if applicable) as it was in `wxwidgets` for modifying the current selection.
+    - **Visual Synchronization:**
+        -   When the `Selection` object is updated, it must signal (`MapView` or `MapScene`) that the visual representation of the selection needs to change.
+        -   The `SelectionItem` (from Task 58) must accurately reflect the current selection (e.g., drawing the rubber-band, or individual `MapTileItem`s changing their highlight state).
+        -   Ensure visual updates are efficient and responsive, especially during drag-selection over many tiles.
+    - **Mimic Previous Behavior:** The goal is to precisely replicate the original `wxwidgets` selection functionality in terms of how users select single tiles, rectangular areas, add to, and subtract from existing selections using mouse and modifier keys.
+    - **`Task61.md` must provide a detailed specification of the `wxwidgets` selection modes, how modifier keys (Shift, Ctrl, Alt) affected selection, the behavior of click vs. drag for selection, and how the visual feedback (e.g., rubber-band, tile highlighting) was updated.**

@@ -1,2 +1,14 @@
-**Task25: Create Basic Sprite Class in Qt**
-- Implement the abstract base `Sprite` class (including protected members if this used polymorphism/base copy-assignment mechanisms) to hold graphical sprite information and a DrawTo method for rendering. Implement `unloadDC` for resource cleanup using Qt-style memory/resource management, and a basic `drawTo` to serve as fallback renderer, which takes standard Draw parameters like size, dimensions (startX, startY, width, height, rotation if relevant or later from brush). Define enum for sizes or store directly, similar to SPRITE_SIZE\_XXX (32x32, 64x64, etc. if those affect rendering)
+**Task25: Create Basic `Sprite` Abstract Class in Qt (Core Interface & Polymorphism Support)**
+- Task: **Implement the abstract base `Sprite` class in `project_qt`. This class serves as the foundational interface for all graphical sprite representations (editor UI sprites, game asset sprites).**
+    - **Analyze Existing Sprite Code:** If any base sprite class exists in `Project_QT/src`, this task will refine or replace it to meet the full interface requirements.
+    - **Core Interface (Pure Virtual Methods):**
+        -   `virtual void drawTo(QPainter* painter, const QRect& targetScreenRect, const QRect& sourceSpriteRect, ...) = 0;` (or similar signature to allow drawing a portion of the sprite to a target, handling different animation frames later). Parameters might include source XY, width/height from sprite sheet, target XY.
+        -   `virtual void unload() = 0;` (for explicit resource cleanup).
+        -   `virtual int width() const = 0;`
+        -   `virtual int height() const = 0;` (per frame, if animated).
+        -   Potentially methods for animation control if common to all sprites (e.g., `getFrameCount()`, though detailed animation is more for `GameSprite`).
+    - **Protected Members (if for polymorphism):** Include any common protected member variables (e.g., sprite dimensions, current frame index placeholder) if the original `wxwidgets` `Sprite` base class used these to support polymorphic behavior or common copy/assignment mechanisms.
+    - **Resource Management:** Ensure the design considers Qt-style memory and resource management (e.g., `unloadDC` from original, how derived classes will handle `QPixmap`s/`QImage`s).
+    - **Drawing Parameters:** The `drawTo` method should accept standard drawing parameters like target size, dimensions, and potentially parameters like (startX, startY, width, height from sprite sheet, rotation if relevant later, or if needed by brush previews).
+    - **Sprite Size Enum/Storage:** Define an enum for common sprite sizes (`SPRITE_SIZE_32X32`, `SPRITE_SIZE_64X64`, etc.) if these sizes imply specific rendering paths or optimizations, or ensure sprite dimensions are stored directly and accessible.
+    - **`Task25.md` must detail the original `Sprite` base class's interface, key protected members, and how `wxwidgets` handled sprite polymorphism and common sprite data, to guide the Qt interface design.**

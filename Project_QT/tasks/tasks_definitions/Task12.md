@@ -1,2 +1,10 @@
-**Task12: Port `Tile` class to Qt**
-- Migrate `Tile`, reworking it to be friendly with `QGraphicsItem`-based tile rendering and data retrieval. A tile contains many items (`QVector<Item*>`). Adapt tile flags and properties to Qt style using enum classes or type-safe methods where applicable.  A Tile usually signals when a change happens on it which map uses, if needed.
+**Task12: Port `Tile` class to Qt (Item/Creature Storage, Flags, Properties, Basic Signals)**
+- Task: **Migrate the `Tile` class from `wxwidgets`, reworking its internal structure and interface to be compatible with `project_qt`'s Qt-based architecture and specifically for interaction with `QGraphicsItem`-based tile rendering and data retrieval.**
+    - **Analyze Existing `Tile` Code:** Examine any pre-existing `Tile` class in `Project_QT/src`. This task requires integrating with, heavily refactoring, or replacing it to meet all specified requirements.
+    - **Item and Creature Storage:** A core requirement is that each `Tile` instance must now contain and manage dynamic collections of game objects, specifically a `QVector<Item*>` for items and potentially a `QVector<Creature*>` for creatures (if creatures aren't simply specialized `Item`s, refer to `Task11.md` and `Task12.md` for this distinction).
+    - **Flags and Properties Adaptation:**
+        -   Adapt all original tile flags (e.g., blocking, walkable, protection zone, house tile, animation flags) and properties to Qt style. This may involve using C++11 `enum class` for type-safe flags, boolean member variables, or type-safe getter/setter methods where applicable.
+        -   Ensure a clear mapping exists from the original `wxwidgets` tile flags/properties to their new Qt representations.
+    - **Signaling Changes:** If the original `Tile` design involved signaling its owning `Map` object when a significant change occurred on the tile (e.g., an item added/removed, a flag changed that affects rendering or collision), this mechanism should be ported using Qt's signal and slot mechanism. Define appropriate signals in the `Tile` class (e.g., `tileChanged()`).
+    - **Integration with `Map`:** Ensure this `Tile` class integrates cleanly with the `Map` data structure being developed in Task 11, particularly how `Map` stores and accesses `Tile` instances.
+    - **`Task12.md` must provide a comprehensive list of all flags and properties from the `wxwidgets` `Tile` class, how they should be represented in the Qt `Tile` class, and the specific signals the `Tile` class should emit.**

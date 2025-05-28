@@ -1,2 +1,21 @@
-**Task68: Create Find Item Dialog (Qt Version) including Browse Tile and functionality from Find Similar**
--Implement  `FindItemDialog` for Item properties, filtering also if on selection based on `wxFindItemWindow` search functionality including both range, name.
+**Task68: Create `Find Item Dialog` (Qt Version - Full UI, Search Logic Stubs, `Browse Tile` Concept)**
+- Task: **Implement a `FindItemDialog` `QDialog` in `project_qt`, replicating the UI and search parameter capabilities of `wxFindItemWindow`. This dialog will allow users to search for items based on various properties, and should also include concepts like "Browse Tile" and results display, integrating functionality from the original "Find Similar" if that was part of the same UI.**
+    - **Analyze Existing Find Dialogs:** Review `Project_QT/src` for any item searching UI.
+    - **`FindItemDialog` UI Implementation:**
+        -   Create the `QDialog` with all necessary input controls to specify search criteria:
+            -   Item ID range (min/max).
+            -   Item Name (string search, partial matches).
+            -   `ItemType` or category selection (populated from `ItemManager` or `TilesetManager`).
+            -   Specific item attributes/flags (e.g., checkboxes for `isMoveable`, `isBlocking`; input fields for custom attributes if searchable).
+        -   Include a "Browse Tile" button/feature: When clicked, it should conceptually allow the user to select a tile on the `MapView` (this interaction is a stub for now), and the properties of items on that tile would populate the search criteria in the dialog.
+        -   Provide an area to display search results (e.g., a `QListWidget` or `QTableView`).
+        -   Buttons: "Find," "Go to Selected," "Find Next," "Close."
+    - **Search Functionality (Stubs for Backend):**
+        -   When "Find" is clicked, the dialog should:
+            -   Gather all search criteria from its UI controls.
+            -   Call a placeholder method in `ItemManager` or a new `MapSearcher` class, like `searchItems(const SearchCriteria& criteria)`.
+            -   For this task, `searchItems` can be a stub that returns a dummy list of found item IDs or logs the criteria.
+        -   "Go to Selected" would conceptually take a selected result and make `MapView` navigate to it.
+    - **Filtering on Selection:** If `wxFindItemWindow` also had options to filter search results based on the current map selection, include UI elements for this (checkbox "Search in selection only").
+    - **"Find Similar" Integration:** If "Find Similar" was part of this dialog's functionality (e.g., populate search fields based on a selected item, then find others like it), ensure UI elements support this workflow.
+    - **`Task68.md` must detail the complete UI layout of `wxFindItemWindow`, all its search fields and options (including ranges, name matching logic), how "Browse Tile" worked to populate criteria, and how search results were displayed or interacted with.**

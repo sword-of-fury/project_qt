@@ -1,4 +1,5 @@
 
+---
 
 <div align="left">
     <img src="https://img.icons8.com/?size=512&id=55494&format=png" width="40%" align="left" style="margin-right: 15px"/>
@@ -78,7 +79,7 @@ This strategic migration prioritizes establishing a single, coherent framework. 
 
 ## ✅ Migration Progress
 
-The `project_qt` codebase reflects an **active and iterative migration process**. Significant architectural shifts have been made, laying a solid foundation for future development.
+The `project_qt` codebase reflects an **active and iterative migration process**. Significant architectural shifts have been made, laying a solid foundation for future development. This migration is currently being facilitated by an AI assistant (Jules) following detailed instructions in the `./tasks/` directory.
 
 ---
 
@@ -91,37 +92,36 @@ The project's code is organized into two primary directories, reflecting the mig
     ├── Project_QT/               # The new, actively developed Qt6-based project codebase
     │   └── src/                  # Source files for the Qt6 project
     ├── wxwidgets/                # Original C++ codebase using wxWidgets, SFML, ImGui
-    └── tasks/                    # Folder containing AI-assisted migration instructions and configurations
-        ├── migration_tasks_config.xml # Authoritative task list and configuration for AI
-        ├── master_prompt.txt        # Primary operational prompt for the AI assistant
+    └── tasks/                    # AI-assisted migration instructions and configurations
+        ├── migration_tasks_config.xml # Defines all migration tasks and project context.
+        ├── master_prompt.txt        # The primary operational instruction set and workflow for the AI assistant (Jules).
         └── task_definitions/        # (Optional) Detailed markdown files for specific complex tasks
 ```
 *(Note: Only key migration-relevant directories shown above for brevity. Refer to actual repository for full structure.)*
 
 ---
 
-## 📌 Project Roadmap (For AI Interpretation)
+## 📌 Guidance for AI-Assisted Migration (Jules & Other AI)
 
-This section provides general guidance for any AI assistant analyzing this `README.md` file. It outlines the current project strategy. For **detailed operational instructions, task lists, and specific interaction protocols, refer to the files within the `./tasks/` directory.**
+This section provides guidance for any AI assistant involved in or analyzing the migration of this project. **Our primary AI assistant, Jules, operates under a detailed set of instructions found within the `./tasks/` directory.**
 
-When processing this `README.md` and subsequent tasks related to `project_qt`:
+1.  **Primary Goal Understanding:** Always refer to the central objective: complete migration of the `wxwidgets` codebase features to `project_qt` using Qt6 exclusively, ensuring feature parity and addressing any existing partial migrations in `project_qt`.
 
-1.  **Understand Primary Goal:** Always remember the central objective: **complete migration of `wxwidgets` codebase features to `project_qt` using Qt6 exclusively**, replacing `wxWidgets`, `SFML`, and `ImGui`.
+2.  **Authoritative Operational Instructions:**
+    *   **For the AI (Jules) actively performing the migration:** Your primary operational instructions, task execution logic, Git workflow, communication protocols, and interaction model are defined in **`./tasks/master_prompt.txt`**.
+    *   Task definitions and sequence are provided in **`./tasks/migration_tasks_config.xml`**.
+    *   Detailed task elaborations may be found in `[TaskID].md` files within **`./tasks/tasks_definitions/`**.
+    *   You **MUST** prioritize and strictly adhere to the workflow and directives within these files, especially `master_prompt.txt`.
 
-2.  **Adopt the "Coder" Role:** Unless explicitly instructed otherwise by files in the `./tasks/` folder, assume your role is that of the **"Coder"**. This implies:
-    *   Delivering **100% functional, ready-to-integrate code.**
-    *   Identifying all affected files within `project_qt`.
-    *   Providing **complete, updated content of each affected file.**
-    *   **No placeholders** in the code you deliver unless specifically requested. All migrated logic should be derived directly from `wxwidgets` code.
-    *   Summarizing work done after delivering code.
+3.  **Nature of Work ("Coder" Role):** The AI performing the migration (Jules) acts as the "Coder." This involves:
+    *   Analyzing original `wxwidgets` code and any existing `project_qt` code relevant to the current task.
+    *   Delivering complete, functional, and ready-to-integrate Qt6 code that meets 100% of the task's requirements.
+    *   Identifying and providing the full content of all affected files within `project_qt`.
+    *   Summarizing work done at the completion of each main task, as detailed in `master_prompt.txt`.
 
-3.  **Utilize Full Codebase Access (Conceptual):** Leverage conceptual access to both the `wxwidgets` and `project_qt` directories for deep comparison, understanding architectural nuances, and deriving exact migration logic.
+4.  **Codebase Context:** Remember you are working with a conceptual copy of the *entire repository*. Paths like `wxwidgets/` or `Project_QT/src/` are relative to the root of this repository copy.
 
-4.  **Seek Clarification:** If any instruction or project detail seems ambiguous, or if there's a contradiction, **always ask for clarification** before proceeding, prioritizing instructions found within the `./tasks/` folder.
-
-5.  **Authoritative AI Instructions:** For specific task execution, Git workflow, the active task list, and detailed interaction protocols, you **MUST** refer to and prioritize the files within the `./tasks/` directory, specifically:
-    *   `./tasks/migration_tasks_config.xml`: This is your primary task list and configuration data.
-    *   `./tasks/master_prompt.txt`: This contains your overarching operational instructions and workflow.
+5.  **Iterative Feedback:** The active AI assistant (Jules) is designed for an interactive process. Human review and iterative feedback via chat *during* task execution are part of the workflow detailed in `master_prompt.txt`.
 
 ---
 ## 🚀 Getting Started
@@ -180,5 +180,3 @@ Before getting started with `Project_QT`, ensure your runtime environment meets 
 </details>
 
 ---
-
-

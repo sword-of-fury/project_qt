@@ -1,2 +1,12 @@
-**Task7: Refactor basic wxDialog classes to QDialog.**
-- Focus: Migrate simple dialog windows to their QDialog counterparts (with associated layouts), replicating functionality for these dialogs as modal instances initially, but ensuring event connection mechanisms (`SIGNAL`/`SLOT`) for interactivity with `MainWindow`.
+**Task7: Refactor basic `wxDialog` classes to `QDialog` (UI Layout, Standard Buttons, Modal Behavior)**
+- Task: **Focus on migrating "simple" `wxDialog` classes from the `wxwidgets` project to their `QDialog` counterparts in `project_qt`. Simple dialogs are defined as those primarily used for displaying information or gathering straightforward input via standard controls, and which use standard buttons like OK/Cancel/Yes/No with minimal custom logic directly in the dialog class itself (complex backend interactions triggered by these buttons are handled by the calling code).**
+    - **Analyze Existing `QDialog`s:** Review `Project_QT/src` for any existing base `QDialog` classes, UI conventions (e.g., for button placement), or common helper functions that should be utilized for consistency.
+    - **UI Replication:** Replicate the UI layout of each targeted `wxDialog`. This can be achieved either by:
+        -   Creating Qt Designer forms (`.ui` files) and loading them in the `QDialog` subclass.
+        -   Programmatically creating and arranging Qt widgets (`QLabel`, `QLineEdit`, `QCheckBox`, `QPushButton`, etc.) and layouts (`QVBoxLayout`, `QHBoxLayout`, `QGridLayout`, `QFormLayout`) within the `QDialog` subclass's constructor.
+    - **Modal Behavior:** Ensure these migrated dialogs function correctly as modal instances (`exec()`) by default, or modeless (`show()`) if their original `wxwidgets` behavior was such and it's appropriate.
+    - **Standard Button Signals/Slots:**
+        -   Connect standard `QPushButton` signals (e.g., `clicked()`) for OK, Cancel, Yes, No buttons to the `QDialog`'s built-in slots (`accept()`, `reject()`) or to simple custom slots within the dialog that emit these standard outcomes.
+        -   If the original `wxDialog` directly invoked `MainWindow` methods or emitted global events upon button clicks for simple actions, establish placeholder slots in `MainWindow` and connect the new `QDialog` signals to them for now.
+    - **Scope:** This task is *not* for migrating dialogs with highly complex custom controls, intricate internal state machines, or significant direct data processing/validation logic that resides deeply within the dialog class itself (these are for later tasks).
+    - **`Task7.md` will list the specific `wxDialog` classes that are candidates for this "basic" migration phase and provide details on their expected UI elements and simple signal/slot connections.**

@@ -1,5 +1,24 @@
-**Task89: Migrate Replace Item Functionality**
-.
-
-
-  -  Recreate Find Similar dialog for the selection, allowing the same set of options (names, flags, replace on selection rather than on map wide findItems similar results/items or using them in selection for items of that type - which was the context there on `Map->doSearch`) as well updating all places/functions that interact now with item property getters, or their attribute functions rather than flags from items or some `Brush::propertyType`.
+**Task89: Migrate Replace Item Functionality (Full `Find Similar` Dialog Logic, Options, & Map Updates)**
+- Task: **Recreate the full "Find Similar Items" / "Replace Item" functionality, including its dialog UI (extending Task 50) and the backend logic for searching, selecting items for replacement, and applying replacements to the map. Ensure all original options (name matching, flag checks, replace in selection vs. map-wide) are present, and that updates correctly use `Item` property getters/attributes instead of direct flag access from `Item` or `Brush::propertyType`.**
+    - **Analyze Existing Replace Logic:** Build upon `FindSimilarDialog` UI stubs (Task 50) and search capabilities (Task 82) in `Project_QT/src`.
+    - **`FindSimilarDialog` Enhancements (UI & Logic):**
+        -   Finalize the UI for the dialog, ensuring it contains all controls from the original `wxwidgets` version for:
+            -   Specifying items to find (ID, name, flags/attributes, type).
+            -   Specifying replacement item (ID, or option to delete).
+            -   Specifying scope (current selection, whole map, visible layers, etc.).
+            -   Options like "Match Case," "Whole Word Only" for name searches.
+        -   Implement logic within the dialog to gather these criteria.
+    - **Backend Search Integration:**
+        -   The "Find" or "Find All" button should use `ItemManager` or `MapSearcher` (from Task 82) to get a list of matching `Item`s or `Tile`s.
+        -   Display these results in the dialog (e.g., in a `QListWidget`).
+    - **Replacement Logic (`ReplaceItemsCommand`):**
+        -   When "Replace Selected" or "Replace All" is clicked:
+            -   Create an undoable `ReplaceItemsCommand`.
+            -   This command will take the list of items to replace and the replacement parameters.
+            -   `redo()`: For each target item, remove it from its `Tile` and add the new replacement item (or do nothing if deleting). This must correctly handle item counts, attributes of the new item (does it inherit some from the old, or get default attributes for its type?).
+            -   `undo()`: Restores the original items.
+        -   Push the command onto the `QUndoStack`.
+    - **Contextual Updates:**
+        -   Ensure all item property checking for "find similar" (e.g., comparing flags, names, attributes) now uses the `Project_QT/src` `Item`'s getter methods or attribute map functions, not direct member access to flags that might have existed on `wxItem` or was inferred from `Brush::propertyType`.
+        -   If the original `Map->doSearch` functionality operated on items within the current `Selection`, this should be an option.
+    - **`Task89.md` must detail all options and behaviors of the original "Find Similar Items" / "Replace Item" dialog(s) and underlying logic: how items were matched, what properties could be replaced, handling of replacement scope (selection vs. map-wide), and any interactions with the undo system or map display updates after replacement.**

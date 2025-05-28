@@ -1,2 +1,11 @@
-**Task31: Migrate `dc_button.h` to `QPushButton` subclass and implement `onClick`.**
-- Rename the `DCButton` class to a more Qt-like name, such as `SpriteButton`. Ensure seamless functionality.
+**Task31: Migrate `dc_button.h` to `QPushButton` subclass (e.g., `SpriteButton`) and implement basic `onClick` and self-drawing.**
+- Task: **If `DCButton` (from `dc_button.h` in `wxwidgets`) was a custom `wxControl` subclass that performed its own drawing (e.g., rendering a sprite, icon, or custom graphics instead of using standard button styling), create a Qt equivalent. This will typically involve subclassing `QPushButton`. Rename the class to a more Qt-like name, such as `SpriteButton` or as specified in `Task31.md`.**
+    - **Analyze Existing Custom Buttons:** Check `Project_QT/src` for any existing custom button classes; this new class should align with or extend those patterns if suitable.
+    - **Self-Drawing with `paintEvent`:** Override the `paintEvent(QPaintEvent *event)` method in your `SpriteButton` subclass. Inside `paintEvent`, use `QPainter` to:
+        -   Draw the button's background (potentially respecting stylesheets or current button state like hovered, pressed).
+        -   Draw the specific sprite, icon (`QIcon` or `QPixmap`), or custom graphics that the original `DCButton` rendered. The sprite/icon data could be a member of `SpriteButton`, set via a method, or loaded from resources.
+    - **Resource Management:** If the button loads its own image (e.g., an `EditorSprite`), ensure it manages the lifecycle of that resource.
+    - **Properties:** Implement properties in `SpriteButton` to hold the image/sprite to be drawn, and potentially different images for different states (normal, hovered, pressed, disabled) if the original `DCButton` supported this.
+    - **`onClick` Functionality:** Ensure the standard `QPushButton::clicked(bool checked = false)` signal is emitted correctly when the button is clicked. For this task, connecting this signal to specific application logic is secondary; the focus is on the button class itself behaving like a button. External connections to `MainWindow` slots or other handlers will use this standard signal.
+    - **Seamless Functionality:** The goal is to have a Qt button that visually and behaviorally (as a clickable element) matches the original `DCButton`.
+    - **`Task31.md` is crucial for providing the visual specifications of the original `DCButton` (what it drew, how it looked in different states) and its API for setting the visual content.**

@@ -1,2 +1,15 @@
-**Task18: Migrate `Automagic_Settings` - Set Up Initial Interface and Links**
--  Implement initial automagic setting features for efficient border drawing (`walls_repel_borders`, `same_ground_type_border`, `borderize_delete`, custom_border) similar to AutomagicSettingsDialog to link later with an automagic UI if the separate `wxAutomagicSettings` dialog is deemed necessary as a sub-panel/subdialog of main Preferences or a dedicated entry in Tools for configuring how `BorderSystem` will draw when placing tiles in map, along with dynamic refresh functionality in MainWindow based on whether automagic border/wall application is changed. `BorderSystemDialog` can be replaced/re-organized to fit a section or toggles in this `Qt` preferences later or an extension but needs logic moved and integrated, and initial enabling via this panel to hook up borderSystem. Don't create a separate dialog if it was a set of simple preferences in the original application - integrate seamlessly if applicable or implement to replicate featureset.
+**Task18: Migrate `Automagic_Settings` - Set Up Initial Interface and Placeholder Links to `BorderSystem`**
+- Task: **Implement initial UI features for automagic border and wall drawing settings in `project_qt`, replicating functionality similar to the `wxAutomagicSettingsDialog`. This involves creating the necessary Qt UI elements and establishing placeholder connections for its logic.**
+    - **Analyze Existing UI:** Review any existing preferences UI or automagic settings panels in `Project_QT/src` for integration.
+    - **UI Implementation:** Create the Qt UI elements. This could be a sub-panel within a main `PreferencesWindow`, a separate `QDialog`, or a dedicated entry/panel in a "Tools" section, as specified by `Task18.md`. The UI should include controls (e.g., `QCheckBox`, `QRadioButton`) for settings like:
+        -   `walls_repel_borders`
+        -   `same_ground_type_border`
+        -   `borderize_delete`
+        -   `custom_border` (and any associated sub-settings).
+    - **Placeholder Logic & Links:**
+        -   Implement stubs for saving and loading these settings (e.g., to a conceptual application settings manager like `QSettings`, actual persistence is Task 97).
+        -   Establish initial signal/slot connections from these UI elements to placeholder functions in `MainWindow` or a new (stubbed) `AutomagicBorderController` / `BorderSystem` class. These placeholder functions would log the setting change.
+        -   Include stubs for dynamic refresh functionality in `MainWindow` or `MapView` that would be called when automagic border/wall application settings are changed by the user.
+    - **Integration with `BorderSystemDialog`:** If `BorderSystemDialog` in `wxwidgets` was merely a collection of simple preferences, integrate those seamlessly into this new UI. If it was more complex, its full migration might be a separate sub-task detailed in `Task18.md`.
+    - **Goal:** The main focus is to have the UI for these automagic settings in place and linked to stubs that signify where the `BorderSystem` logic (to be developed/integrated later, e.g., Task 52) will be hooked. Do not create a separate dialog if it was simple toggles in the original, integrate seamlessly where appropriate.
+    - **`Task18.md` provides details on the original UI layout, the specific settings involved, and how they conceptually interacted with the border application logic in `wxwidgets`.**

@@ -1,2 +1,20 @@
-**Task95: Complete and Refine `SelectionBrush` (Including Transformations).**
-Handle interaction like what wx did with modifier key events as those determine selection (`startDrag`) rather than just `MouseClick` from `map_display`. Create actual transformations similar to MapView-`DrawInternal`, unless now selection only adds items via new Brush logic or is fully managed by an object selection and transform that creates items (in map, like how Brush might, then update QGraphicsView's tiles in bounds similar to paste logic as items add likely signals changes using either Tiles' attributes if that has Item flags set after edit using Tile as central unit there or from an event/brush draw that maps uses to determine modifiedTiles rather than just those that Selection contains directly).
+**Task95: Complete and Refine `SelectionBrush` (Full Transformation Logic, Modifiers, `MapDisplay` Interaction)**
+- Task: **Complete and refine the `SelectionBrush` (or the general map selection tool if not a specific brush). This includes fully implementing all transformation logic (move, rotate, flip - building on Task 69), handling all modifier key interactions for complex selections as done in `wxwidgets map_display`, and ensuring visual updates and map data changes are correct and robust.**
+    - **Analyze Existing `SelectionBrush` / Tool:** Consolidate work from Task 17 (data), Task 58 (visuals), Task 61 (interaction), Task 79 (commands).
+    - **Interaction Logic (from `wxwidgets map_display`):**
+        -   Ensure the mouse event handling (`mousePressEvent`, `mouseMoveEvent`, `mouseReleaseEvent` in `MapView`) perfectly replicates the behavior from `wxwidgets map_display` when the selection tool is active. This includes `startDrag` logic for initiating selections or moving existing selections.
+        -   Correctly handle all modifier keys (Shift, Ctrl, Alt) to manage selection modes (new, add, subtract, intersect if applicable).
+    - **Transformation Execution (Finalize Task 69):**
+        -   When transformation `QAction`s (Move, Rotate, Flip) are triggered:
+            -   The active `SelectionBrush` or `MapView` (if it owns selection transformations) must now execute the full transformation logic.
+            -   The actual `Item`s and `Tile`s within the current selection (data from `Selection` object) must be modified in the `Map`.
+            -   For `Move`, this involves "cutting" the original items/tiles (saving their state) and "pasting" them at the new location, potentially overwriting existing content or merging.
+            -   For `Rotate`/`Flip`, item properties, orientations, and potentially even their `ItemType`s (if different item IDs represent rotated versions) must be updated. This requires careful handling based on `ItemType` definitions.
+    - **Visual Feedback (`MapView`-`DrawInternal` equivalent):**
+        -   If `MapView-DrawInternal` (or similar in `wxwidgets`) provided specific visual feedback during selection or transformation (e.g., ghosting the selection while dragging, drawing rotation pivots), port this to `QPainter` overlays in `MapView` or by manipulating `QGraphicsItem`s for the selection.
+    - **Map Data Update & Undoing:**
+        -   All transformations must modify the actual `Tile` data in the `Map` object.
+        -   These changes must be wrapped in `QUndoCommand`s for robust undo/redo.
+        -   Signals must be emitted (`map->tilesChanged()`) to update `MapView`, `Minimap`, and any property editors.
+    - **Interaction with `Item` Flags / Properties:** The selection tool or transformations might now directly add/remove `Item`s based on brush logic, or set `Tile` attributes (if flags still on `Tile`). Changes made must then be reflected by `QGraphicsView` tile updates, potentially via the `Tiles`' attributes if the `Map` uses these to determine modified regions rather than just relying on what the `Selection` object contains.
+    - **`Task95.md` must specify the exact modifier key behaviors, the visual feedback during selection/transformation from `wxwidgets map_display` / `DrawInternal`, how transformations affected various item types, and the full logic for moving/copying selections (e.g., paste logic if it created items on the map, and how `QGraphicsView` bounds were updated).**

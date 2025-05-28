@@ -1,2 +1,27 @@
-**Task88: Create `ProgressDialog` using QProgressDialog and adapt usages**
-(those like MapView had). For any wx version which might now just post directly after each process step in place, convert with threads using events/emit signals after a delay or based on current processing chunks if needed and if its meant for user feedback of some operation taking time using progress on MapViews or MainWindow rather than via individual component setting load scale each loop now directly in UI from Map functions doing operations on Tile::Items via its lists unless a dedicated load handler or Editor/selection level actions provide a similar state when converting maps as there were those functions. Update if some Map method no longer reports done at Map but rather `onTileUpdated`, tile draw triggers events based on what changes after drawing has taken place, as any drawing operation now triggers the new tiles to get processed to set those internal flags for example (`modify`).
+**Task88: Create `ProgressDialog` using `QProgressDialog` and adapt usages (Threaded Long Operations)**
+- Task: **Implement a reusable `ProgressDialog` class in `project_qt` (typically a wrapper around `QProgressDialog` or a custom `QDialog` mimicking its behavior). Identify long-running operations in the application (e.g., map loading/saving from Task 84, complex searches from Task 82, large batch item replacements) and refactor them to display this `ProgressDialog`, run the core work in a separate thread if they block the UI, and allow for cancellation if possible.**
+    - **Analyze Existing Progress Indication:** Review any `wxProgressDialog` usages or manual progress update logic in `wxwidgets`.
+    - **`ProgressDialog` Wrapper Class:**
+        -   Create `MyProgressDialog` (e.g., inheriting `QProgressDialog` or `QDialog`).
+        -   Provide a simple API: `MyProgressDialog(const QString& title, const QString& labelText, int min, int max, QWidget* parent)` constructor; `void setProgress(int value)`; `void setLabelText(const QString& text)`; `bool wasCanceled() const`.
+    - **Identify Long Operations:** Systematically go through tasks that involve potentially lengthy processing, such as:
+        -   `Map::loadFromFile()`, `Map::saveToFile()` (Task 84, Task 51/60).
+        -   Large "Find All" or "Replace All" operations (Task 82).
+        -   Complex map validation or cleanup routines.
+        -   Bulk item transformations (Task 69).
+        -   Potentially initial sprite loading if very large (Task 35).
+        -   Other operations identified in `Task88.md`.
+    - **Refactor to Use Threads (if UI blocking):**
+        -   For operations that would block the UI:
+            -   Move the core processing logic into a separate class derived from `QObject` with a `Q_SLOT void process();` and `Q_SIGNAL void progressUpdated(int value, const QString& currentStepText); Q_SIGNAL void finished();`.
+            -   Create a `QThread`. Move the `QObject` worker to this thread (`moveToThread()`).
+            -   Before starting the thread, show the `MyProgressDialog`.
+            -   Connect the worker's `progressUpdated` signal to a slot that updates `MyProgressDialog`.
+            -   Connect the worker's `finished` signal to a slot that closes `MyProgressDialog` and performs any post-operation UI updates.
+            -   Connect `MyProgressDialog::canceled()` signal to a slot in the worker that sets a flag to stop processing.
+            -   Start the thread.
+    - **Simpler Updates (for non-blocking or hard-to-thread):** If an operation isn't easily threaded but has distinct steps, it can still create and update `MyProgressDialog` synchronously within its loop, calling `QApplication::processEvents()` periodically to keep the dialog responsive (less ideal but better than a frozen UI). The original `MapView` might have had such synchronous updates.
+    - **Replace `wxProgressDialog`:** All `wxProgressDialog` instances from `wxwidgets` must be replaced with this new Qt-based progress dialog system.
+    - **Consistency:** Ensure a consistent look and feel for progress indication across the application.
+    - **Updating `Tile::modify()` Interactions:** If operations iterate through many `Tile::Items` via lists and each `Tile` operation (like `modify()`) was very fast but many occurred, the progress should be reported for batches of tiles, not each one individually unless it makes sense.
+    - **`Task88.md` should list all known long-running operations from `wxwidgets` that used `wxProgressDialog` or would benefit from progress indication, and describe any existing threading or asynchronous processing patterns related to them.**

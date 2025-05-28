@@ -1,2 +1,18 @@
-**Task75: Update MapView properties for drawing states (those like 'ghost_items', 'show_zones')**
-based on their implementation from source for proper functionality (`OnChangeViewSettings`) and interaction between view style settings and item type rendering rather than those tiles changing based on them for now if MapScene keeps a separate visual element based representation similar to wxwidgets mapView unless these are now attributes on the Tile/item from other Brush-property based tiles that DrawingOptions uses.
+**Task75: Update `MapView` properties for drawing states (Implement `OnChangeViewSettings` for `ghost_items`, `show_zones`, etc.)**
+- Task: **Implement the full functionality for various `MapView` drawing state properties (e.g., 'ghost_items', 'show_zones', 'transparent_floors', 'show_lighting', 'show_grid', as originally controlled by settings or `OnChangeViewSettings` logic in `wxwidgets`). These settings affect how `MapTileItem`s and other elements in `MapScene` are rendered, often interacting with `ItemType` properties or `Tile` states.**
+    - **Analyze Existing `MapView` Settings:** Review `Project_QT/src`'s `MapView` and `DrawingOptions` (or equivalent) for existing display settings.
+    - **Property Implementation in `MapView` / `DrawingOptions`:**
+        -   Ensure `MapView` (or a `DrawingOptions` object it owns/references) has member variables to store the state of each visual setting (e.g., `bool m_showGhostItems; bool m_showZones; float m_floorTransparency;`).
+        -   Provide public getter/setter methods for these properties in `MapView`.
+    - **UI Connections:** Connect UI elements (e.g., checkboxes/sliders in a "View" menu, toolbar, or `PreferencesWindow`) to these `MapView` setters. When a UI control changes, the corresponding `MapView` property is updated.
+    - **Effect on Rendering:**
+        -   The `MapTileItem::paint()` method (and `Tile::draw()`, `Item::draw()` it calls) must now query these `MapView`/`DrawingOptions` properties and adjust rendering accordingly:
+            -   **`ghost_items`:** If true, items on hidden/inactive floors might be drawn semi-transparently.
+            -   **`show_zones`:** If true, zone overlays (e.g., PZ, No-Logout indicators, potentially using dedicated `QGraphicsItems` or custom drawing in `MapTileItem`) are made visible.
+            -   **`transparent_floors`:** Adjust opacity of `MapTileItem`s for floors below the current active floor.
+            -   **Other states:** Implement effects for any other similar drawing flags from `wxwidgets`.
+        -   This might involve passing the `DrawingOptions` (or `MapView*`) down through the draw calls, or `MapTileItem` directly querying its parent `MapView`.
+    - **Interaction with `ItemType` Rendering:** Some `ItemType`s might have inherent properties that interact with these view settings (e.g., an item might only be visible if "show special markers" is enabled). `Item::draw()` might need to check both its own properties and the `MapView` settings.
+    - **MapScene Updates:** Changing these `MapView` properties must trigger a repaint/update of the `MapScene` or relevant `MapTileItem`s to reflect the visual changes (e.g., `mapScene->update()` or `mapView->viewport()->update()`).
+    - **Distinction from Tile-Based Changes:** This task is about *view-wide rendering styles*, not changes to the underlying `Tile` or `Item` data itself (unless `MapView` settings somehow alter how `Item` properties are interpreted for display). The original `wxwidgets mapView` often handled this unless these are now direct attributes on `Tile`/`Item` queried by `DrawingOptions`.
+    - **`Task75.md` must list all such view settings from `wxwidgets`, how they were controlled by the user (`OnChangeViewSettings`), their visual effect on map elements, and how they interacted with item/tile properties or `DrawingOptions` during rendering.**

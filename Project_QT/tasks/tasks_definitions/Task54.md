@@ -1,2 +1,14 @@
-**Task54: Finalize Item Rendering (Integrate Sprites)**
-Implement full sprite integration, using Sprites, Item sprites/info to draw the entire structure based on its layers (using either internal caches like MapTiles seem to do when created for any items, including walls, other floors with that Tile location having items or just the actively displayed one by Item rather than layer based logic on Tiles, with Draw ensuring they are set to the right spot and are filtered based on zoom in `drawTilesContentToCache`).
+**Task54: Finalize Item Rendering (Integrate Sprites - Full Sprite Sheet & Animation Handling)**
+- Task: **Implement full, production-quality sprite integration for `Item` rendering. This means `Item::draw()` must now correctly use `GameSprite`s (Task 27) and `SpriteManager` (Task 35) to draw the entire visual structure of items based on their type, properties, and animation state, respecting layers and drawing options.**
+    - **Analyze Existing Rendering:** Build upon `Item::draw()` (Task 13/22) and `GameSprite` (Task 27) from `Project_QT/src`.
+    - **`Item::draw()` Full Implementation:**
+        -   When `Item::draw(QPainter* painter, ...)` is called (by `Tile::draw()`), it must:
+            -   Determine the correct `GameSprite` for this `Item` (e.g., by querying `SpriteManager` with its `ItemID` or `ItemType`).
+            -   If the `Item` is animated, get the current animation frame from its `GameSprite` (which uses its `Animator`).
+            -   Call `theGameSprite->drawTo(painter, targetRectOnTile, sourceRectFromSpriteSheet, currentFrame, ...)` to render the item.
+            -   Handle sprite layers correctly if an item consists of multiple stacked sprites (e.g., an outfit with addons, a creature with equipment) or if its rendering is affected by `Tile` layers.
+    - **Sprite Information Access:** Ensure `Item` can access all necessary sprite information (offsets, dimensions, animation details) either through its `ItemType` data (loaded by `ItemManager`) or directly from the `GameSprite` obtained via `SpriteManager`.
+    - **Integration with `MapTileItem` Caching:** `Item::draw()` is called by `Tile::draw()`, which in turn is called by `MapTileItem::paint()`. If `MapTileItem` caches its rendering to a `QPixmap` (Task 23), this full item sprite rendering will be part of that cache. `drawTilesContentToCache` (if this is a `MapView` method) needs to ensure all visible items are drawn correctly to this cache.
+    - **Zoom-Based Filtering/LOD (if applicable):** If specific items or item details should not be rendered at certain zoom levels (as per `DrawingOptions` or `ItemType` properties), implement this filtering logic within `Item::draw()` or before calling it.
+    - **Wall & Floor Rendering:** This task also implies that items representing walls, floors, and other map structures now render using their proper sprites, not placeholders.
+    - **`Task54.md` must specify how `ItemType` data maps to `GameSprite` IDs/animations, any layering rules for composite item sprites, and how original rendering handled different visual states of items (e.g., open/closed containers, on/off lights).**

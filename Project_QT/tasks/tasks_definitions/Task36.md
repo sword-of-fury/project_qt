@@ -1,2 +1,15 @@
-**Task36: Migrate core `Brushes` interface from `brush.h` using std::shared_ptr**
-- Create a common brush interface (like Brush with an essential draw and canDraw methods to make drawing logic unified based on Item/Tile/parameters used rather than individual operations across Item->create method/wall automagic. Each type uses draw and Brush::ItemType or internal structure to create appropriate item on Tile.
+**Task36: Migrate core `Brushes` interface from `brush.h` (`Brush` Abstract Base Class & Smart Pointers)**
+- Task: **Create a common abstract base class named `Brush` in `project_qt`, replicating the interface and polymorphic design intent from the original `brush.h` in `wxwidgets`. This class will serve as the parent for all specific brush tools.**
+    - **Analyze Existing Base Brush:** If a base `Brush` class already exists in `Project_QT/src`, refactor or complete it to match the full requirements.
+    - **Pure Virtual Interface:** Define the essential pure virtual methods that all concrete brush subclasses must implement. Based on typical brush functionality and original `brush.h` (detailed in `Task36.md`), this should include methods like:
+        -   `virtual QString name() const = 0;`
+        -   `virtual Brush::Type type() const = 0;` (where `Brush::Type` is a ported enum of all brush types).
+        -   `virtual bool canDraw(Map* map, const QPoint& tilePos, Item* currentItem) const = 0;` (to check if the brush can be used at a given location with a given item).
+        -   `virtual void draw(Map* map, const QPoint& tilePos, Item* currentItem) = 0;` (to apply the brush's primary effect - conceptually placing/modifying items).
+        -   `virtual void undraw(Map* map, const QPoint& tilePos, Item* currentItem) = 0;` (to undo the brush's primary effect).
+        -   Possibly methods for mouse press/move/release if brushes handle detailed interaction state: `virtual void mousePressEvent(QMouseEvent* event, MapView* mapView) = 0;` etc. (though Task 34 suggests `MapView` might orchestrate this, calling simpler `Brush` methods).
+    - **Shared Functionality (Optional):** If the original `Brush` base class had any common utility methods or shared data members useful for all brushes, include these as well (as non-pure virtuals or protected members).
+    - **Brush ItemType/Data:** Consider how the base `Brush` class will store or access the current `Item` or `ItemType` it's configured to draw with (e.g., `setCurrentItem(Item* item)`).
+    - **Ownership & Management with Smart Pointers:** Specify that `Brush` instances will typically be managed by `BrushManager` (Task 33) using smart pointers (e.g., `std::shared_ptr<Brush>` or `std::unique_ptr<Brush>`), ensuring clear ownership and lifetime management. `BrushManager::createBrush()` should return such a smart pointer.
+    - **Goal:** The aim is a unified `Brush` interface that allows `BrushManager` and `MapView` to interact with different brush tools polymorphically. Each specific brush subclass will then implement the drawing logic to create appropriate items on a `Tile` or modify map data.
+    - **`Task36.md` must detail the full public and protected interface of the original `Brush` base class from `brush.h`, including all virtual methods, member variables, and the `Brush::Type` enum.**

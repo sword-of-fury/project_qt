@@ -1,4 +1,13 @@
-**Task47: Brush Panel Cleanup and Efficiency**
-.
-
- -  Improve BrushPalettePanel and its `BrushPanel`, to manage memory more effectively by freeing unused bitmaps, resetting states as in wxwidget's original. Also update ItemButton usage - this was for various selection panels using those buttons.
+**Task47: `BrushPalettePanel` and `BrushPanel` Cleanup and Efficiency (Resource Management & `ItemButton` Usage)**
+- Task: **Improve `BrushPalettePanel` and its child `BrushPanel`(s) (stubs created in earlier task) to manage memory more effectively, particularly by correctly freeing unused bitmaps or `QPixmap`s associated with `ItemButton`s, and resetting internal states as the original `wxwidgets` version did to prevent resource leaks or stale displays.**
+    - **Analyze Existing Palette Panels:** Review the `BrushPalettePanel` and `BrushPanel` implementations in `Project_QT/src` (if stubs were created or basic versions exist).
+    - **Bitmap/Pixmap Management for `ItemButton`s:**
+        -   If `ItemButton`s (which display item icons/previews in the brush palette) load or generate their own `QPixmap`s, ensure these are properly released when the button is destroyed, or when the palette is cleared or re-populated.
+        -   Implement logic in `BrushPalettePanel` or `BrushPanel` to explicitly clear or update `ItemButton`s when the available brushes/items change, ensuring old graphics are not retained in memory unnecessarily. This might involve iterating through child `ItemButton`s and calling a `clearIcon()` or `setIcon(QPixmap())` method on them.
+    - **State Resetting:** Port any state resetting logic from the original `wxwidgets` `BrushPalettePanel`. This could include:
+        -   Clearing internal lists or maps of brushes/items.
+        -   Resetting selection states within the panel.
+        -   Releasing handles to shared resources if they are no longer needed after a context switch (e.g., map close, different tileset loaded).
+    - **`ItemButton` Usage:** This task implies refining the `ItemButton` class itself (or its usage within the panels). If `ItemButton` was a custom class for various selection panels, ensure it now correctly handles displaying an item's visual representation (e.g., a `QPixmap` from `ResourceManager` or a `GameSprite` preview) and interacts properly with the palette's selection model. Its memory footprint should be considered.
+    - **Efficiency:** The overall goal is to ensure these UI panels are efficient and do not cause memory growth over time as different items or brushes are displayed or as palettes are refreshed.
+    - **`Task47.md` should detail how the original `wxwidgets` panels managed their graphical resources, what specific cleanup or reset methods were called (e.g., `OnMapClose`, `OnTilesetChange`), and how `ItemButton`-like elements were populated and cleared.**

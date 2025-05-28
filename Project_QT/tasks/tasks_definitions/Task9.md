@@ -1,2 +1,18 @@
-**Task9: QToolBar Conversion for MainToolbar**
-- Migrate the `MainToolBar` using `QToolBar` (for a primary non-dockable toolbar if `mainToolBar` was always a separate toolbar in the `wx` version), using `QAction`s with `QIcon` support, similar to how the menu was created in Step 8. Consider integrating zoom controls (either `QSlider` or `QSpinBox`) and a layer selector (combo box) directly onto this main `QToolBar` or a new `QToolBar`, updating related logic to propagate layer/zoom changes, mirroring toolbar section visibility management if this was controlled by a manager like `wxAuiManager`. For now, connect actions to dummy slots in `MainWindow`, and properly ensure `ToolBarID` logic is migrated either via direct enum/string property setting of toolbar groups if they will remain distinct OR with a dummy placeholder handler function in `MainWindow` for visibility switching.
+**Task9: `QToolBar` Conversion for `MainToolBar` (Full Actions, Controls, Placeholder Logic)**
+- Task: **Migrate the `MainToolBar` from `wxwidgets` to Qt, using one or more `QToolBar` objects added to the `MainWindow`.**
+    - **Analyze Existing Toolbars:** Review any existing `QToolBar` implementations in `Project_QT/src`'s `MainWindow`. This task may involve enhancing an existing toolbar or creating new ones to match the original functionality.
+    - **`QAction` Integration:** For each button or tool on the original `MainToolBar`:
+        -   Create a `QAction` (these might be the same `QAction` objects created for the `QMenuBar` in Task 8 if the toolbar button mirrors a menu item).
+        -   Assign an `QIcon` for the toolbar representation.
+        -   Set tooltip and status tip.
+        -   Add these `QAction`s to the `QToolBar`.
+    - **Integrated Controls (Initial Implementation):**
+        -   If the original `MainToolBar` directly hosted controls like zoom sliders/spinboxes or layer selection combo boxes, integrate their Qt equivalents (`QSlider`, `QSpinBox`, `QComboBox`) onto the `QToolBar` (often by wrapping them in a `QWidgetAction` or adding them directly if the `QToolBar` allows).
+        -   Implement placeholder logic for these controls:
+            -   Connect zoom control signals (e.g., `valueChanged()`) to `MainWindow` slots that log the new zoom value (actual map zooming is later).
+            -   Populate layer combo box with dummy layer names and connect its `currentIndexChanged()` signal to a `MainWindow` slot that logs the selected layer (actual layer switching is later).
+    - **Signal/Slot Connections:** Connect the `triggered()` signals of toolbar `QAction`s to the same `MainWindow` slots as their corresponding menu actions (if applicable) or to new placeholder slots.
+    - **`ToolBarID` Logic & Visibility:**
+        -   If the `wxwidgets` application used `ToolBarID`s or a similar mechanism to manage groups of toolbars or their visibility (e.g., via `wxAuiManager` or view menus), this system needs to be conceptually mapped. For now, `QToolBar` visibility can be managed via `QAction`s in the View menu (from Task 8) that toggle `QToolBar::setVisible()`.
+        -   Placeholder logic for saving/restoring toolbar positions and visibility state via application settings (Task 97) should be noted.
+    - **`Task9.md` must provide a detailed layout of the original `MainToolBar`, including all buttons, integrated controls, their order, associated action IDs, and any specific behavior related to their state (e.g., toggle buttons).**

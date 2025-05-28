@@ -1,0 +1,15 @@
+**Task98: Migrate 'Ground Border Tool' Automagic (Full Specialized Tool Logic & Integration)**
+- Task: **Migrate the specific functionality of the 'Ground Border Tool' if this was a distinct automagic tool in `wxwidgets` for placing or adjusting ground borders, separate from general automagic border application (Task 18/52). This requires porting its unique logic and ensuring it integrates correctly with `BorderSystem`, `GroundBrush`, and the `Map` data model.**
+    - **Analyze Original 'Ground Border Tool':** Identify how this tool was invoked in `wxwidgets` (e.g., a dedicated brush mode, a menu option) and its specific behavior distinguishing it from default ground bordering.
+    - **Tool Activation & UI:**
+        -   If it was a brush mode, ensure `BrushManager` can create/select a `GroundBorderToolBrush`.
+        -   If it had its own UI for settings (beyond general Automagic settings), migrate that UI.
+    - **Specialized Logic:** Port the core algorithm of this tool. For example:
+        -   Did it only work on existing ground and try to "fix" or add standard borders?
+        -   Did it allow clicking between two ground types to place a specific transition border?
+        -   Did it have rules about overriding existing borders or interacting with walls?
+    - **Integration with `BorderSystem`:** This tool must use or interact with the `BorderSystem` (Task 52). It might configure `BorderSystem` with specific parameters or call specialized `BorderSystem` methods for its operations.
+    - **Interaction with `GroundBrush`:** Clarify how this tool differs from or complements the standard `GroundBrush` (Task 38) when `GroundBrush` itself interacts with `BorderSystem`. Is it a mode of `GroundBrush` or entirely separate?
+    - **Map Data Modification:** Ensure the tool correctly modifies `Tile` data by adding/removing/changing border `Item`s, and that these changes are undoable commands and trigger visual updates in `MapView`.
+    - **Purpose:** If `Task98.md` confirms this was a user-driven tool for fine-grained control over ground borders beyond the default automatic behavior when placing ground, that's the functionality to capture.
+    - **`Task98.md` must clearly define what the 'Ground Border Tool' did in `wxwidgets`, how it was activated, its specific UI (if any), its algorithm for applying borders, and how its behavior was distinct from the general automagic bordering triggered by normal ground placement.**

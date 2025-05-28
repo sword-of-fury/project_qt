@@ -40,6 +40,15 @@ MapView::MapView(QWidget* parent) :
     setOptimizationFlag(QGraphicsView::DontSavePainterState);
     setCacheMode(QGraphicsView::CacheBackground); // Cache static background to improve performance
 
+    // Mouse state initializations
+    draggingMap = false;
+    drawingActive = false;
+    selectionActive = false;
+    boundingBoxSelection = false;
+    activeMouseButton = Qt::NoButton;
+    mouseInsideView = false;
+    setMouseTracking(true); // Important for hover effects and cursor updates
+
     // Connect MapView's scrollbar changes to update visible tiles in MapScene.
     connect(horizontalScrollBar(), &QScrollBar::valueChanged, this, &MapView::updateVisibleTiles);
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, &MapView::updateVisibleTiles);
@@ -54,10 +63,11 @@ MapView::MapView(QWidget* parent) :
 
     // Timer for periodic updates, owned by MapView.
     updateTimer = new QTimer(this);
-    connect(updateTimer, &QTimer::timeout, this, &MapView::updateCursor);
-    updateTimer->start(100);
+    connect(updateTimer, &QTimer::timeout, this, &MapView::updateCursor); // updateCursor needs to be aware of mouseInsideView
+    updateTimer->start(100); // Refresh interval for cursor etc.
     
     // Attempt to set the map from MainWindow if it's already available.
+    // This might be better handled by MainWindow explicitly calling setMap post-construction.
     if (auto mainWin = qobject_cast<MainWindow*>(parentWidget())) {
         if (mainWin->getMap()) {
             setMap(mainWin->getMap());
@@ -301,127 +311,298 @@ void MapView::mousePressEvent(QMouseEvent* event)
     QGraphicsView::mousePressEvent(event); // Always call base class.
 
     QPoint mousePos = event->pos();
-    QPoint tilePos = mapToTile(mousePos);
+    lastMousePos = mousePos; // Store for dragging calculations
+    activeMouseButton = event->button(); // Store which button initiated this sequence
 
-    // Pan (Middle Button or Ctrl+Left Drag)
-    if (event->button() == Qt::MiddleButton || (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ControlModifier))) {
+    QPoint tilePos = mapToTile(mousePos); // mapToTile uses event->pos() internally if needed
+
+    MainWindow* mainWin = qobject_cast<MainWindow*>(parentWidget());
+    bool switchMouseButtons = false; // Placeholder for g_settings.getInteger(Config::SWITCH_MOUSEBUTTONS)
+    if (mainWin) {
+        // switchMouseButtons = mainWin->settings().getSwitchMouseButtons(); // Example
+    }
+
+    // --- Panning (Middle Button or Right if switched, or Ctrl+Left) ---
+    bool panKeyPressed = (event->button() == Qt::MiddleButton && !switchMouseButtons) ||
+                         (event->button() == Qt::RightButton && switchMouseButtons) ||
+                         (event->button() == Qt::LeftButton && event->modifiers() & Qt::ControlModifier);
+
+    if (panKeyPressed) {
+        draggingMap = true;
         setDragMode(QGraphicsView::ScrollHandDrag);
-        lastPanPos = event->pos();
+        // Let QGraphicsView handle the ScrollHandDrag initiation.
+        // We store lastPanPos in case we need it for other logic, but QGraphicsView manages its own.
+        lastPanPos = event->pos(); 
+        QGraphicsView::mousePressEvent(event); // Crucial to let base class initiate ScrollHandDrag
         event->accept();
         return;
     } else {
-        setDragMode(QGraphicsView::RubberBandDrag); // Reset drag mode for other actions.
+        // Default drag mode when not panning
+        if (currentBrush && currentBrush->getType() == Brush::Type::Selection) {
+            setDragMode(QGraphicsView::RubberBandDrag); // For selection tool
+        } else {
+            setDragMode(QGraphicsView::NoDrag); // For drawing tools
+        }
     }
 
-    // Right-click: Context Menu
-    if (event->button() == Qt::RightButton) {
+    // --- Context Menu (Right Button or Middle if switched) ---
+    bool contextMenuKeyPressed = (event->button() == Qt::RightButton && !switchMouseButtons) ||
+                                 (event->button() == Qt::MiddleButton && switchMouseButtons);
+    if (contextMenuKeyPressed) {
+        if (mainWin && currentBrush && currentBrush->getType() != Brush::Type::Selection) {
+            // mainWin->setSelectionMode(); // Equivalent of g_gui.SetSelectionMode()
+        }
+        if (currentMap) { // Select tile under cursor for context menu
+            currentMap->clearSelection(); // Clear previous selection
+            currentMap->selectTile(tilePos.x(), tilePos.y(), currentLayer);
+            // mapScene->updateTileSelection(tilePos); // Visual update for single tile selection
+        }
         createContextMenu(event->globalPos());
         event->accept();
         return;
     }
 
-    // Left-click: Brush Application or Selection Start
+    // --- Left Button Actions (Drawing or Selection) ---
     if (event->button() == Qt::LeftButton) {
+        dragStartTile = tilePos;
+        dragStartScenePos = mapToScene(mousePos);
+
         if (currentBrush && currentMap) {
-            // Special handling for SelectionBrush to track selection state.
             if (currentBrush->getType() == Brush::Type::Selection) {
-                isSelecting = true;
-                startSelectPos = tilePos;
-                // Delegate to selection brush for its specific logic (e.g., initial selection, clear, toggle).
-                currentBrush->mousePressEvent(event, this);
-            } else {
-                // Other brushes (Normal, Eraser, FloodFill, Pencil) apply directly.
-                currentBrush->mousePressEvent(event, this);
+                selectionActive = true;
+                SelectionBrush* selBrush = static_cast<SelectionBrush*>(currentBrush);
+                
+                // Porting logic from MapCanvas::OnMouseActionClick (selection part)
+                if (event->modifiers() & Qt::ShiftModifier) { // Boundbox selection
+                    boundingBoxSelection = true;
+                    if (!(event->modifiers() & Qt::ControlModifier)) { // Shift only, not Ctrl+Shift
+                        currentMap->clearSelection();
+                    }
+                } else if (event->modifiers() & Qt::ControlModifier) { // Ctrl only (toggle selection)
+                    currentMap->toggleTileSelection(tilePos.x(), tilePos.y(), currentLayer);
+                     // No drag for toggle. selectionActive might be set false by brush.
+                } else { // No modifiers
+                    Tile* clickedTile = currentMap->getTile(tilePos.x(), tilePos.y(), currentLayer);
+                    if (clickedTile && currentMap->isTileSelected(tilePos.x(), tilePos.y(), currentLayer)) {
+                        // Clicked on already selected tile, prepare for drag-move
+                        // selBrush->prepareMoveSelection(); // Brush handles this state
+                    } else {
+                        currentMap->clearSelection();
+                        currentMap->selectTile(tilePos.x(), tilePos.y(), currentLayer);
+                        // selBrush->prepareMoveSelection(); // Brush handles this state
+                    }
+                }
+                selBrush->mousePressEvent(event, this); // Let brush handle its internal state
+            } else { // Drawing mode
+                drawingActive = true;
+                // Logic from MapCanvas::OnMouseActionClick (drawing part)
+                currentBrush->mousePressEvent(event, this); // Brush handles actual drawing
             }
-            mapScene->update(); // Request redraw of scene (for immediate brush feedback, cursor).
+            // mapScene->update(); // Often handled by map signals now
             event->accept();
             return;
         }
     }
+    QGraphicsView::mousePressEvent(event);
 }
+
+void MapView::mouseDoubleClickEvent(QMouseEvent* event)
+{
+    QGraphicsView::mouseDoubleClickEvent(event); // Call base first
+
+    MainWindow* mainWin = qobject_cast<MainWindow*>(parentWidget());
+    bool doubleClickProperties = true; // Placeholder for g_settings.getInteger(Config::DOUBLECLICK_PROPERTIES)
+    // if(mainWin) { doubleClickProperties = mainWin->settings().getDoubleClickProperties(); }
+
+
+    if (event->button() == Qt::LeftButton && doubleClickProperties) {
+        QPoint tilePos = mapToTile(event->pos());
+        Tile* tile = currentMap ? currentMap->getTile(tilePos.x(), tilePos.y(), currentLayer) : nullptr;
+        
+        if (tile) {
+            // Determine what was double-clicked (top item, creature, spawn, or tile itself)
+            // This logic mirrors MapCanvas::OnMouseLeftDoubleClick
+            // For simplicity, this example primarily focuses on items.
+            // In a full implementation, check for spawns and creatures too.
+
+            Item* topItem = tile->getTopItem(); // Assuming Tile::getTopItem() exists
+
+            if (topItem) {
+                // Emit a signal for MainWindow to show properties for this item
+                emit itemSelected(topItem); 
+            } else if (!tile->getCreatures().isEmpty()) {
+                 emit creatureSelected(tile->getCreatures().first());
+            // } else if (tile->getSpawn()) {
+                // emit spawnSelected(tile->getSpawn()); // If you have a signal for spawns
+            } else {
+                // No specific item/creature, show properties for the tile itself
+                emit tileSelected(tile);
+            }
+            event->accept();
+        }
+    }
+}
+
 
 void MapView::mouseMoveEvent(QMouseEvent* event)
 {
-    // Tracks mouse movement, updates status bar, cursor, and continues drag operations.
-    QGraphicsView::mouseMoveEvent(event);
+    QPoint currentMousePos = event->pos();
+    QPoint currentTilePos = mapToTile(currentMousePos);
+    MainWindow* mainWin = qobject_cast<MainWindow*>(parentWidget());
 
-    QPoint tilePos = mapToTile(event->pos());
-    emit mousePositionChanged(tilePos); // Update status bar.
+    if (lastMousePos != currentMousePos) {
+        emit mousePositionChanged(currentTilePos);
+        if (mouseInsideView) {
+            updateCursor(); // Update brush preview based on new position
+        }
+    }
 
-    updateCursor(); // Update brush preview.
-
-    // Continue Panning
-    if (event->buttons().testFlag(Qt::MiddleButton) || (event->buttons().testFlag(Qt::LeftButton) && event->modifiers().testFlag(Qt::ControlModifier))) {
-        QPoint delta = event->pos() - lastPanPos.toPoint();
-        lastPanPos = event->pos();
-        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
-        verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+    // --- Panning (if activeMouseButton is set appropriately) ---
+    if (draggingMap) {
+        // QGraphicsView::ScrollHandDrag handles the actual scrolling when active.
+        // We just need to ensure the event is passed to the base class if ScrollHandDrag is active.
+        if (dragMode() == QGraphicsView::ScrollHandDrag) {
+            QGraphicsView::mouseMoveEvent(event);
+        } else {
+            // Custom panning logic if ScrollHandDrag is not used (e.g. if it was implemented manually)
+            // QPoint delta = currentMousePos - lastMousePos;
+            // horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
+            // verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
+        }
+        lastMousePos = currentMousePos;
         event->accept();
         return;
     }
 
-    // Continue Brush Application/Selection during Left-click drag.
-    if (event->buttons().testFlag(Qt::LeftButton) && currentBrush && currentMap) {
-        if (currentBrush->getType() == Brush::Type::Selection) {
-            if (isSelecting) {
-                // Propagate mouse move for active selection drag.
-                // The SelectionBrush's mouseMoveEvent will update the map's selection rect directly.
-                static_cast<SelectionBrush*>(currentBrush)->mouseMoveEvent(event, this);
+    // --- Drawing or Selection Drag (Left Button) ---
+    if (activeMouseButton == Qt::LeftButton && (event->buttons() & Qt::LeftButton) && currentBrush && currentMap) {
+        if (selectionActive) {
+            // In selection mode and left button is down
+            // Delegate to SelectionBrush to handle drag (e.g., rubber band, move preview)
+            if (SelectionBrush* selBrush = qobject_cast<SelectionBrush*>(currentBrush)) {
+                selBrush->mouseMoveEvent(event, this); // Pass this MapView instance
             }
-        } else {
-            // For other brushes, apply effect on drag.
+        } else if (drawingActive) {
+            // In drawing mode and left button is down
+            // Delegate to current drawing brush
             currentBrush->mouseMoveEvent(event, this);
         }
-        mapScene->update(); // Request scene redraw.
+        // mapScene->update(); // Often handled by brush or map signals now
         event->accept();
+        lastMousePos = currentMousePos; // Update lastMousePos for continuous drag
         return;
     }
+    
+    lastMousePos = currentMousePos;
+    QGraphicsView::mouseMoveEvent(event); // Call base for other hover effects etc.
 }
+
 
 void MapView::mouseReleaseEvent(QMouseEvent* event)
 {
-    // Finalizes mouse-initiated actions.
-    QGraphicsView::mouseReleaseEvent(event);
+    Qt::MouseButton releasedButton = event->button();
+    MainWindow* mainWin = qobject_cast<MainWindow*>(parentWidget());
+    bool switchMouseButtons = false; // Placeholder for g_settings.getInteger(Config::SWITCH_MOUSEBUTTONS)
+    // if (mainWin) { switchMouseButtons = mainWin->settings().getSwitchMouseButtons(); }
 
-    QPoint tilePos = mapToTile(event->pos());
 
-    if (currentBrush && currentMap) {
-        if (currentBrush->getType() == Brush::Type::Selection) {
-            if (isSelecting) {
-                isSelecting = false; // End selection drag.
-                // Finalize selection in the map model.
-                static_cast<SelectionBrush*>(currentBrush)->mouseReleaseEvent(event, this);
-            }
+    // --- Panning Release ---
+    bool panButtonReleased = (releasedButton == Qt::MiddleButton && !switchMouseButtons) ||
+                             (releasedButton == Qt::RightButton && switchMouseButtons) ||
+                             (releasedButton == Qt::LeftButton && event->modifiers() & Qt::ControlModifier && draggingMap);
+
+    if (draggingMap && panButtonReleased) {
+        draggingMap = false;
+        // If ScrollHandDrag was active, it handles its own release.
+        // Reset to NoDrag or RubberBandDrag as appropriate.
+        if (currentBrush && currentBrush->getType() == Brush::Type::Selection) {
+             setDragMode(QGraphicsView::RubberBandDrag);
         } else {
-            // Finalize brush stroke for other brushes.
-            currentBrush->mouseReleaseEvent(event, this);
+             setDragMode(QGraphicsView::NoDrag);
         }
-        mapScene->update(); // Request scene redraw.
+        QGraphicsView::mouseReleaseEvent(event); // Propagate for ScrollHandDrag to finalize
+        setCursor(Qt::ArrowCursor);
+        if (activeMouseButton == releasedButton) activeMouseButton = Qt::NoButton;
+        event->accept();
+        return;
     }
-    // No explicit accept needed here, as default behavior continues or event has already been accepted by `mousePressEvent`.
+
+    // --- Drawing or Selection Release (Left Button) ---
+    if (activeMouseButton == Qt::LeftButton && releasedButton == Qt::LeftButton && currentBrush && currentMap) {
+        if (selectionActive) {
+            if (SelectionBrush* selBrush = qobject_cast<SelectionBrush*>(currentBrush)) {
+                selBrush->mouseReleaseEvent(event, this); // Finalize selection
+            }
+            selectionActive = false;
+            boundingBoxSelection = false;
+        } else if (drawingActive) {
+            currentBrush->mouseReleaseEvent(event, this); // Finalize drawing stroke
+            drawingActive = false;
+        }
+        // mapScene->update(); // Often handled by brush or map signals
+        if (activeMouseButton == releasedButton) activeMouseButton = Qt::NoButton;
+        event->accept();
+        return;
+    }
+    
+    if (activeMouseButton == releasedButton) {
+        activeMouseButton = Qt::NoButton;
+    }
+    QGraphicsView::mouseReleaseEvent(event);
 }
 
 void MapView::wheelEvent(QWheelEvent* event)
 {
-    // Handles zoom operations.
-    const double zoomFactor = 1.15;
-    QPointF oldScenePos = mapToScene(event->pos()); // Point in scene coordinates to anchor zoom.
-
-    if (event->angleDelta().y() > 0) { // Scroll up = zoom in
-        setZoom(zoom * zoomFactor);
-    } else { // Scroll down = zoom out
-        setZoom(zoom / zoomFactor);
+    MainWindow* mainWin = qobject_cast<MainWindow*>(parentWidget());
+    if (!mainWin) {
+        QGraphicsView::wheelEvent(event);
+        return;
     }
 
-    // Adjust viewport to keep the old scene position anchored after scaling.
-    QPointF newScenePos = mapToScene(event->pos());
-    QPointF delta = newScenePos - oldScenePos;
-    translate(delta.x(), delta.y());
+    Qt::KeyboardModifiers modifiers = event->modifiers();
+    int delta = event->angleDelta().y(); // Standard way to get wheel delta
 
-    event->accept(); // Consume event, prevents default scroll behavior.
-    mapScene->update();
-    mapScene->updateGridLines(); // Grid needs to be redrawn at new zoom.
-    updateCursor(); // Update brush preview size.
+    if (modifiers & Qt::ControlModifier) { // Ctrl + Wheel: Change floor
+        if (delta > 0) mainWin->changeFloor(currentLayer + 1);
+        else mainWin->changeFloor(currentLayer - 1);
+        event->accept();
+    } else if (modifiers & Qt::AltModifier) { // Alt + Wheel: Change brush size
+        if (delta > 0) mainWin->increaseBrushSize();
+        else mainWin->decreaseBrushSize();
+        event->accept();
+    } else { // Default: Zoom
+        const double zoomFactorBase = 1.15;
+        double zoomFactor = (delta > 0) ? zoomFactorBase : 1.0 / zoomFactorBase;
+        
+        setZoom(zoom * zoomFactor); // setZoom handles clamping and scene updates
+        // Centering on mouse is handled by setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+        event->accept();
+    }
+    // mapScene->update(); // setZoom should trigger necessary updates.
+    // updateCursor(); // setZoom or brush size change should trigger this.
+}
+
+void MapView::enterEvent(QEvent* event) {
+    QGraphicsView::enterEvent(event);
+    mouseInsideView = true;
+    updateCursor(); // Show cursor when mouse enters
+    // Could also grab keyboard focus: setFocus(Qt::MouseFocusReason);
+}
+
+void MapView::leaveEvent(QEvent* event) {
+    QGraphicsView::leaveEvent(event);
+    mouseInsideView = false;
+    if (cursorItem) {
+        cursorItem->setPixmap(QPixmap()); // Hide custom cursor item
+    }
+    // Reset any hover states if necessary
+    // If a drag operation is not active, reset activeMouseButton
+    if (activeMouseButton != Qt::NoButton && !(QApplication::mouseButtons() & activeMouseButton)) {
+        activeMouseButton = Qt::NoButton;
+        drawingActive = false;
+        selectionActive = false;
+        draggingMap = false;
+    }
 }
 
 void MapView::keyPressEvent(QKeyEvent* event)
@@ -521,36 +702,37 @@ void MapView::updateVisibleTiles()
 void MapView::updateCursor()
 {
     // Updates the position and appearance of the brush preview cursor.
-    if (!cursorItem || !currentMap || !isVisible()) {
-        cursorItem->setPixmap(QPixmap()); // Hide cursor if view not visible.
+    if (!cursorItem || !currentMap || !isVisible() || !mouseInsideView) { // Check mouseInsideView
+        if (cursorItem) cursorItem->setPixmap(QPixmap()); // Hide cursor if view not visible or mouse outside
         return;
     }
 
-    QPoint viewPos = mapFromGlobal(QCursor::pos()); // Get cursor in Viewport coordinates.
-    // Clamp to viewport rect to prevent weird positions outside.
-    if (!viewport()->rect().contains(viewPos)) {
-        cursorItem->setPixmap(QPixmap()); // Hide cursor if mouse leaves viewport.
+    QPoint viewPos = mapFromGlobal(QCursor::pos());
+    if (!viewport()->rect().contains(viewPos)) { // Check if cursor is within the viewport bounds
+        cursorItem->setPixmap(QPixmap());
         return;
     }
     
     QPoint tilePos = mapToTile(viewPos);
     
-    // Validate tile position against map bounds before rendering cursor preview.
     if (tilePos.x() < 0 || tilePos.x() >= currentMap->getSize().width() ||
         tilePos.y() < 0 || tilePos.y() >= currentMap->getSize().height()) {
-         cursorItem->setPixmap(QPixmap()); // Hide cursor if outside map bounds.
+         if (cursorItem) cursorItem->setPixmap(QPixmap());
          return;
     }
 
-    // Position the cursor item correctly in scene coordinates.
     cursorItem->setPos(tilePos.x() * MapTileItem::TilePixelSize, tilePos.y() * MapTileItem::TilePixelSize);
 
     QPixmap cursorPixmap;
     if (currentBrush) {
-        int previewSize = currentBrush->getSize(); // Brush size, typically 1x1, 3x3 etc.
-        previewSize = std::max(1, previewSize); // Minimum 1 for calculations.
-
-        QSize pixmapSize(previewSize * MapTileItem::TilePixelSize, previewSize * MapTileItem::TilePixelSize);
+        // Get brush size in tiles (e.g., 1 for 1x1, 2 for 3x3 (center + 1 around), 0 for point)
+        // This needs to align with how Brush::getSize() is defined.
+        // Assuming Brush::getSize() returns radius for now (0 means 1x1, 1 means 3x3)
+        int brushRadius = currentBrush->getSize(); 
+        int previewDiameter = (brushRadius * 2) + 1; // Diameter in tiles. If size is 0, diameter is 1.
+        
+        QSize pixmapSize(previewDiameter * MapTileItem::TilePixelSize, 
+                         previewDiameter * MapTileItem::TilePixelSize);
         cursorPixmap = QPixmap(pixmapSize);
         cursorPixmap.fill(Qt::transparent); // Start with transparent background.
 
